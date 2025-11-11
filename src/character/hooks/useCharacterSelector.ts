@@ -3,8 +3,8 @@ import { createSectionControls } from '../../utils/levaSectionManager';
 
 // Tous les modèles utiliseront automatiquement les animations du pack X Bot
 export const AVAILABLE_MODELS = {
-  'X Bot': '/models/xbot/X Bot.fbx',
-  'Default': '/models/character.glb',
+  'X Bot': '/models/characters/xbot/X Bot.fbx',
+  'Default': '/models/characters/character.glb',
   'SWAT + Rifle': '/models/swat-rifle.fbx',
   'Vanguard': '/models/vanguard.fbx',
   'The Boss': '/models/the-boss.fbx',

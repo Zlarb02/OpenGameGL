@@ -34,7 +34,7 @@ function CharacterModelGLB({ isMoving, isSprinting, isGrounded, modelPath, onSke
   const { scene } = useGLTF(modelPath);
   
   // Charge les animations du modèle par défaut
-  const defaultAnimations = useGLTF('/models/character.glb').animations;
+  const defaultAnimations = useGLTF('/models/characters/character.glb').animations;
   
   // Utilise les animations rifle si équipé ET chargées, sinon animations normales
   const animations = weaponEquipped && !loading && rifleIdle.length > 0 && rifleRun.length > 0

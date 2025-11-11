@@ -2,7 +2,7 @@ import { useGLTF } from '@react-three/drei';
 import { RigidBody } from '@react-three/rapier';
 
 export function Building() {
-  const { scene } = useGLTF('/models/building.glb');
+  const { scene } = useGLTF('/models/environment/building.glb');
 
   // Enable shadows for all meshes in the model
   scene.traverse((child) => {

@@ -16,7 +16,7 @@ interface RiflePickupProps {
  */
 export function RiflePickup({ position, onPickup }: RiflePickupProps) {
   // Charger le modèle du rifle
-  const { scene } = useGLTF('/models/rifle.glb');
+  const { scene } = useGLTF('/models/weapons/rifle.glb');
 
   return (
     <Pickup
@@ -36,4 +36,4 @@ export function RiflePickup({ position, onPickup }: RiflePickupProps) {
 }
 
 // Preload le modèle
-useGLTF.preload('/models/rifle.glb');
+useGLTF.preload('/models/weapons/rifle.glb');

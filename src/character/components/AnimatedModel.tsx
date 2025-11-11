@@ -67,7 +67,7 @@ export function AnimatedModel({ isMoving, isSprinting, isGrounded }: AnimatedMod
 
         // Idle
         const idleFbx = await new Promise<Group>((resolve, reject) => {
-          loader.load('/models/xbot/idle-new.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
+          loader.load('/models/characters/xbot/idle-new.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
         });
         if (idleFbx.animations?.[0]) {
           const clip = idleFbx.animations[0].clone();
@@ -77,7 +77,7 @@ export function AnimatedModel({ isMoving, isSprinting, isGrounded }: AnimatedMod
 
         // Walking
         const walkFbx = await new Promise<Group>((resolve, reject) => {
-          loader.load('/models/xbot/walking.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
+          loader.load('/models/characters/xbot/walking.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
         });
         if (walkFbx.animations?.[0]) {
           const clip = walkFbx.animations[0].clone();
@@ -87,7 +87,7 @@ export function AnimatedModel({ isMoving, isSprinting, isGrounded }: AnimatedMod
 
         // Run
         const runFbx = await new Promise<Group>((resolve, reject) => {
-          loader.load('/models/xbot/standard run.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
+          loader.load('/models/characters/xbot/standard run.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
         });
         if (runFbx.animations?.[0]) {
           const clip = runFbx.animations[0].clone();
@@ -98,7 +98,7 @@ export function AnimatedModel({ isMoving, isSprinting, isGrounded }: AnimatedMod
 
         // Falling Idle
         const fallingIdleFbx = await new Promise<Group>((resolve, reject) => {
-          loader.load('/models/xbot/falling-idle.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
+          loader.load('/models/characters/xbot/falling-idle.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
         });
         if (fallingIdleFbx.animations?.[0]) {
           const clip = fallingIdleFbx.animations[0].clone();
@@ -108,7 +108,7 @@ export function AnimatedModel({ isMoving, isSprinting, isGrounded }: AnimatedMod
 
         // Falling To Landing
         const fallingToLandingFbx = await new Promise<Group>((resolve, reject) => {
-          loader.load('/models/xbot/falling-to-landing.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
+          loader.load('/models/characters/xbot/falling-to-landing.fbx', (fbx) => resolve(fbx), undefined, (error) => reject(error));
         });
         if (fallingToLandingFbx.animations?.[0]) {
           const clip = fallingToLandingFbx.animations[0].clone();

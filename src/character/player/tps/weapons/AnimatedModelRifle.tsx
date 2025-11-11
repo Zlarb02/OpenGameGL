@@ -127,48 +127,48 @@ export function AnimatedModelRifle({
         };
 
         // Idle animations
-        await loadAnim('/models/rifle-pack/idle.fbx', 'RIFLE_IDLE');
-        await loadAnim('/models/rifle-pack/idle aiming.fbx', 'RIFLE_IDLE_AIM');
-        await loadAnim('/models/rifle-pack/Rifle Aiming Idle.fbx', 'RIFLE_AIMING_IDLE_ALT');
+        await loadAnim('/models/weapons/rifle-pack/idle.fbx', 'RIFLE_IDLE');
+        await loadAnim('/models/weapons/rifle-pack/idle aiming.fbx', 'RIFLE_IDLE_AIM');
+        await loadAnim('/models/weapons/rifle-pack/Rifle Aiming Idle.fbx', 'RIFLE_AIMING_IDLE_ALT');
         
         // Walk animations (8-way)
-        await loadAnim('/models/rifle-pack/walk forward.fbx', 'RIFLE_WALK_FORWARD', 'all');
-        await loadAnim('/models/rifle-pack/walk backward.fbx', 'RIFLE_WALK_BACKWARD', 'all');
-        await loadAnim('/models/rifle-pack/walk left.fbx', 'RIFLE_WALK_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/walk right.fbx', 'RIFLE_WALK_RIGHT', 'all');
-        await loadAnim('/models/rifle-pack/walk forward left.fbx', 'RIFLE_WALK_FORWARD_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/walk forward right.fbx', 'RIFLE_WALK_FORWARD_RIGHT', 'all');
-        await loadAnim('/models/rifle-pack/walk backward left.fbx', 'RIFLE_WALK_BACKWARD_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/walk backward right.fbx', 'RIFLE_WALK_BACKWARD_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk forward.fbx', 'RIFLE_WALK_FORWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk backward.fbx', 'RIFLE_WALK_BACKWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk left.fbx', 'RIFLE_WALK_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk right.fbx', 'RIFLE_WALK_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk forward left.fbx', 'RIFLE_WALK_FORWARD_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk forward right.fbx', 'RIFLE_WALK_FORWARD_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk backward left.fbx', 'RIFLE_WALK_BACKWARD_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk backward right.fbx', 'RIFLE_WALK_BACKWARD_RIGHT', 'all');
 
         // Run animations (8-way)
-        await loadAnim('/models/rifle-pack/run forward.fbx', 'RIFLE_RUN_FORWARD', 'all');
-        await loadAnim('/models/rifle-pack/run backward.fbx', 'RIFLE_RUN_BACKWARD', 'all');
-        await loadAnim('/models/rifle-pack/run left.fbx', 'RIFLE_RUN_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/run right.fbx', 'RIFLE_RUN_RIGHT', 'all');
-        await loadAnim('/models/rifle-pack/run forward left.fbx', 'RIFLE_RUN_FORWARD_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/run forward right.fbx', 'RIFLE_RUN_FORWARD_RIGHT', 'all');
-        await loadAnim('/models/rifle-pack/run backward left.fbx', 'RIFLE_RUN_BACKWARD_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/run backward right.fbx', 'RIFLE_RUN_BACKWARD_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run forward.fbx', 'RIFLE_RUN_FORWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run backward.fbx', 'RIFLE_RUN_BACKWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run left.fbx', 'RIFLE_RUN_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run right.fbx', 'RIFLE_RUN_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run forward left.fbx', 'RIFLE_RUN_FORWARD_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run forward right.fbx', 'RIFLE_RUN_FORWARD_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run backward left.fbx', 'RIFLE_RUN_BACKWARD_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/run backward right.fbx', 'RIFLE_RUN_BACKWARD_RIGHT', 'all');
 
         // Sprint animations (principaux)
-        await loadAnim('/models/rifle-pack/sprint forward.fbx', 'RIFLE_SPRINT_FORWARD', 'all');
-        await loadAnim('/models/rifle-pack/sprint backward.fbx', 'RIFLE_SPRINT_BACKWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/sprint forward.fbx', 'RIFLE_SPRINT_FORWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/sprint backward.fbx', 'RIFLE_SPRINT_BACKWARD', 'all');
 
         // Shooting
-        await loadAnim('/models/rifle-shooting.fbx', 'RIFLE_SHOOTING');
+        await loadAnim('/models/animations/rifle-shooting.fbx', 'RIFLE_SHOOTING');
 
         // Crouch animations - pas de translation du tout
-        await loadAnim('/models/rifle-pack/idle crouching.fbx', 'RIFLE_CROUCH_IDLE', 'all');
-        await loadAnim('/models/rifle-pack/idle crouching aiming.fbx', 'RIFLE_CROUCH_IDLE_AIM', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching forward.fbx', 'RIFLE_CROUCH_WALK_FORWARD', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching backward.fbx', 'RIFLE_CROUCH_WALK_BACKWARD', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching left.fbx', 'RIFLE_CROUCH_WALK_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching right.fbx', 'RIFLE_CROUCH_WALK_RIGHT', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching forward left.fbx', 'RIFLE_CROUCH_WALK_FORWARD_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching forward right.fbx', 'RIFLE_CROUCH_WALK_FORWARD_RIGHT', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching backward left.fbx', 'RIFLE_CROUCH_WALK_BACKWARD_LEFT', 'all');
-        await loadAnim('/models/rifle-pack/walk crouching backward right.fbx', 'RIFLE_CROUCH_WALK_BACKWARD_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/idle crouching.fbx', 'RIFLE_CROUCH_IDLE', 'all');
+        await loadAnim('/models/weapons/rifle-pack/idle crouching aiming.fbx', 'RIFLE_CROUCH_IDLE_AIM', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching forward.fbx', 'RIFLE_CROUCH_WALK_FORWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching backward.fbx', 'RIFLE_CROUCH_WALK_BACKWARD', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching left.fbx', 'RIFLE_CROUCH_WALK_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching right.fbx', 'RIFLE_CROUCH_WALK_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching forward left.fbx', 'RIFLE_CROUCH_WALK_FORWARD_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching forward right.fbx', 'RIFLE_CROUCH_WALK_FORWARD_RIGHT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching backward left.fbx', 'RIFLE_CROUCH_WALK_BACKWARD_LEFT', 'all');
+        await loadAnim('/models/weapons/rifle-pack/walk crouching backward right.fbx', 'RIFLE_CROUCH_WALK_BACKWARD_RIGHT', 'all');
 
         if (!mounted) return;
 
@@ -196,7 +196,7 @@ export function AnimatedModelRifle({
   const rightHandBoneRef = useRef<Bone | null>(null);
 
   // Charger le modèle du rifle
-  const { scene: rifleScene } = useGLTF('/models/rifle.glb');
+  const { scene: rifleScene } = useGLTF('/models/weapons/rifle.glb');
   const rifleGroupRef = useRef<Group | null>(null);
 
   // TROUVER ET STOCKER LES OS (SPINE POUR AIM + MAIN DROITE POUR RIFLE)

@@ -1,13 +1,16 @@
 import React from 'react';
 import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Vector3, Quaternion, MathUtils, Ray } from 'three';
-import { CapsuleCollider, RigidBody, RigidBodyApi, useRapier } from '@react-three/rapier';
-import { useKeyboardControls } from '@react-three/drei';
+import { Vector3, MathUtils, Group } from 'three';
+import { CapsuleCollider, RigidBody, RapierRigidBody, useRapier } from '@react-three/rapier';
 import { useCharacterControls } from '../hooks/useCharacterControls';
 import { calculateMovement, createJumpImpulse, createFallForce, createMovementVelocity } from '../utils/physics';
 import { useMobileControls } from '../contexts/MobileControlsContext';
-import { CharacterModel } from './CharacterModel';
+import { AnimatedModel } from './AnimatedModel';
+import { AnimatedModelRifle } from './AnimatedModelRifle';
+import { useWeaponState } from '../hooks/useWeaponState';
+import { useCharacterSelector } from '../hooks/useCharacterSelector';
+import { useCharacterInput } from '../systems/input';
 
 export type CharacterState = {
   moveSpeed: number;
@@ -17,24 +20,39 @@ export type CharacterState = {
   velocity: { x: number; y: number; z: number };
 };
 
-export const CharacterController = React.forwardRef<any>((_, ref) => {
-  const rigidBody = useRef<RigidBodyApi>(null);
-  const modelRef = useRef<THREE.Group>(null);
+export const CharacterController = React.forwardRef<unknown>((_, ref) => {
+  const rigidBody = useRef<RapierRigidBody>(null);
+  const modelRef = useRef<Group>(null);
+  const weaponState = useWeaponState();
+  const { weaponEquipped, isCrouching, isAiming, isShooting, isReloading } = weaponState;
   const { rapier, world } = useRapier();
   const { isJumping: isMobileJumping, movement: mobileMovement } = useMobileControls();
-  const [, getKeys] = useKeyboardControls();
+  const input = useCharacterInput(); // Nouveau système d'input
   const [isSprinting, setIsSprinting] = useState(false);
   const prevPosition = useRef(new Vector3());
   const [isMoving, setIsMoving] = useState(false);
   const targetRotation = useRef(0);
   const currentRotation = useRef(0);
-  const groundRay = useRef(new Ray(new Vector3(), new Vector3(0, -1, 0)));
+  const cameraAngle = useRef(0); // Store camera angle for movement calculation
+  const cameraPhi = useRef(Math.PI / 2); // Store camera vertical angle for upper body aim
+  const { modelYOffset, modelScale } = useCharacterSelector();
+  const currentCrouchOffset = useRef(0); // Pour animer le crouch progressivement
   const [state, setState] = useState<CharacterState>({
     moveSpeed: 0,
     jumpForce: 0,
     airControl: 0,
     isGrounded: false,
     velocity: { x: 0, y: 0, z: 0 },
+  });
+
+  // Stocker les inputs pour les passer à AnimatedModelRifle
+  const [movementInput, setMovementInput] = useState({
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    sprint: false,
+    jump: false
   });
 
   const controls = useCharacterControls();
@@ -79,18 +97,13 @@ export const CharacterController = React.forwardRef<any>((_, ref) => {
         rigidBody.current
       );
       
-      if (hit && (!closestHit || hit.toi < closestHit.toi)) {
+      if (hit && (!closestHit || hit.timeOfImpact < closestHit.timeOfImpact)) {
         closestHit = hit;
         isGrounded = true;
       }
     }
 
-    // Log ground state changes
-    if (isGrounded !== state.isGrounded) {
-      console.log(`Ground state changed: ${isGrounded ? 'Grounded' : 'In Air'}`);
-    }
 
-    const input = getKeys();
     const shouldJump = input.jump || isMobileJumping;
     const linvel = rigidBody.current.linvel();
     const currentPos = new Vector3(
@@ -99,37 +112,80 @@ export const CharacterController = React.forwardRef<any>((_, ref) => {
       translation.z
     );
 
-    // Update movement state
-    const horizontalSpeed = Math.sqrt(linvel.x * linvel.x + linvel.z * linvel.z);
-    setIsMoving(horizontalSpeed > 0.5);
-    setIsSprinting(input.sprint && horizontalSpeed > 0.5);
+    // Mettre à jour movementInput pour AnimatedModelRifle
+    setMovementInput({
+      forward: input.forward,
+      backward: input.backward,
+      left: input.left,
+      right: input.right,
+      sprint: input.sprint,
+      jump: input.jump
+    });
 
-    // Update rotation based on velocity
-    if (Math.abs(linvel.x) > 0.1 || Math.abs(linvel.z) > 0.1) {
-      targetRotation.current = Math.atan2(linvel.x, linvel.z);
-      
-      // Normalize angle difference to ensure shortest rotation path
-      let angleDiff = targetRotation.current - currentRotation.current;
-      if (angleDiff > Math.PI) {
-        angleDiff -= Math.PI * 2;
-      } else if (angleDiff < -Math.PI) {
-        angleDiff += Math.PI * 2;
-      }
-      targetRotation.current = currentRotation.current + angleDiff;
-    }
-    
-    // Smooth rotation
+    // Update movement state - basé sur l'INPUT plutôt que la vitesse pour plus de réactivité
+    const hasMovementInput = input.forward || input.backward || input.left || input.right ||
+                            Math.abs(mobileMovement.x) > 0 || Math.abs(mobileMovement.y) > 0;
+    const horizontalSpeed = Math.sqrt(linvel.x * linvel.x + linvel.z * linvel.z);
+
+    // isMoving continue même en l'air pour garder l'animation de course pendant le saut
+    setIsMoving(hasMovementInput && horizontalSpeed > 0.05);
+    // Sprint désactivé en l'air ET en accroupi
+    setIsSprinting(input.sprint && hasMovementInput && horizontalSpeed > 0.05 && isGrounded && !isCrouching);
+
+    // Animer progressivement la position Y du crouch
+    const targetCrouchOffset = isCrouching ? (isMoving ? -0.2 : -0.4) : 0;
+    currentCrouchOffset.current = MathUtils.lerp(
+      currentCrouchOffset.current,
+      targetCrouchOffset,
+      0.35 // Transition rapide
+    );
+
+    // Update rotation
     if (modelRef.current) {
-      currentRotation.current = MathUtils.lerp(
-        currentRotation.current,
-        targetRotation.current,
-        0.2
-      );
+      if (weaponEquipped) {
+        // AVEC RIFLE: Rotation suit INSTANTANÉMENT la direction de la caméra
+        // L'angle de la caméra (theta) représente sa rotation AUTOUR du personnage
+        // Le personnage doit donc regarder dans la direction OPPOSÉE (+ PI)
+        targetRotation.current = cameraAngle.current + Math.PI;
+
+        // Rotation instantanée pour éviter tout pivotement de caméra
+        currentRotation.current = targetRotation.current;
+      } else {
+        // SANS RIFLE: Rotation suit la direction de déplacement (locomotion classique)
+        if (Math.abs(linvel.x) > 0.1 || Math.abs(linvel.z) > 0.1) {
+          targetRotation.current = Math.atan2(linvel.x, linvel.z);
+          
+          // Normalize angle difference to ensure shortest rotation path
+          let angleDiff = targetRotation.current - currentRotation.current;
+          if (angleDiff > Math.PI) {
+            angleDiff -= Math.PI * 2;
+          } else if (angleDiff < -Math.PI) {
+            angleDiff += Math.PI * 2;
+          }
+          targetRotation.current = currentRotation.current + angleDiff;
+        }
+        
+        currentRotation.current = MathUtils.lerp(
+          currentRotation.current,
+          targetRotation.current,
+          0.2
+        );
+      }
+      
       modelRef.current.rotation.y = currentRotation.current;
     }
 
     // Handle movement
-    let movement = calculateMovement(input, controls.moveSpeed);
+    let movement = calculateMovement(
+      {
+        forward: input.forward,
+        backward: input.backward,
+        left: input.left,
+        right: input.right,
+        sprint: input.sprint
+      }, 
+      controls.moveSpeed
+    );
     
     // Override keyboard movement with mobile joystick if active
     if (Math.abs(mobileMovement.x) > 0 || Math.abs(mobileMovement.y) > 0) {
@@ -141,11 +197,19 @@ export const CharacterController = React.forwardRef<any>((_, ref) => {
     }
     
     if (movement) {
+      // Modificateurs de vitesse
       const sprintMultiplier = movement.sprint ? controls.sprintMultiplier : 1;
-      const moveForce = controls.moveSpeed * (isGrounded ? 1 : controls.airControl);
-      let velocity = createMovementVelocity(
-        movement.normalizedX,
-        movement.normalizedZ,
+      const crouchMultiplier = isCrouching ? 0.5 : 1; // 50% de vitesse en accroupi
+      const moveForce = controls.moveSpeed * (isGrounded ? 1 : controls.airControl) * crouchMultiplier;
+      
+      // Rotate movement based on camera angle (TPS style)
+      const angle = cameraAngle.current;
+      const rotatedX = movement.normalizedX * Math.cos(angle) + movement.normalizedZ * Math.sin(angle);
+      const rotatedZ = -movement.normalizedX * Math.sin(angle) + movement.normalizedZ * Math.cos(angle);
+      
+      const velocity = createMovementVelocity(
+        rotatedX,
+        rotatedZ,
         moveForce * sprintMultiplier,
         linvel.y
       );
@@ -158,6 +222,13 @@ export const CharacterController = React.forwardRef<any>((_, ref) => {
       }
 
       rigidBody.current.setLinvel(velocity, true);
+    } else if (isGrounded && !hasMovementInput) {
+      // Freinage actif quand on lâche les touches au sol
+      const brakingForce = 0.85; // Force de freinage (0.85 = conserve 15% de la vitesse)
+      rigidBody.current.setLinvel(
+        { x: linvel.x * brakingForce, y: linvel.y, z: linvel.z * brakingForce },
+        true
+      );
     }
 
     // Handle jumping
@@ -177,14 +248,6 @@ export const CharacterController = React.forwardRef<any>((_, ref) => {
     if (isGrounded && !input.jump) {
       const snapForce = createFallForce(0.5);
       rigidBody.current.applyImpulse(snapForce, true);
-      
-      if (closestHit && closestHit.point) {
-        const targetY = closestHit.point.y + 1.2; // Keep character at proper height
-        rigidBody.current.setTranslation(
-          { x: translation.x, y: targetY, z: translation.z },
-          true
-        );
-      }
     }
     
     // Store position for next frame
@@ -212,8 +275,10 @@ export const CharacterController = React.forwardRef<any>((_, ref) => {
           translation?.z || 0
         );
       }
-    }
-  }), [rigidBody.current]);
+    },
+    cameraAngle: cameraAngle,
+    cameraPhi: cameraPhi
+  }), []);
 
   return (
     <RigidBody
@@ -229,16 +294,34 @@ export const CharacterController = React.forwardRef<any>((_, ref) => {
       angularDamping={controls.angularDamping}
       restitution={0}
       ccd={true}
-      maxCcdSubsteps={2}
-      type="kinematicPositionBased"
+      type="dynamic"
     >
-      <CapsuleCollider args={[0.8, 0.4]} offset={[0, 1.2, 0]} />
-      <group ref={modelRef} position={[0, -1.15, 0]} scale={1.5}>
-        <CharacterModel 
-          isMoving={isMoving} 
-          isSprinting={isSprinting} 
-          isGrounded={state.isGrounded} 
-        />
+      <CapsuleCollider args={[0.8, 0.4]} position={[0, 1.2, 0]} />
+      <group
+        ref={modelRef}
+        position={[0, modelYOffset + currentCrouchOffset.current, 0]}
+        scale={modelScale}
+      >
+        {weaponEquipped ? (
+          <AnimatedModelRifle
+            isMoving={isMoving}
+            isSprinting={isSprinting}
+            isGrounded={state.isGrounded}
+            movementInput={movementInput}
+            characterRotation={currentRotation.current}
+            cameraPhi={cameraPhi.current}
+            isAiming={isAiming}
+            isShooting={isShooting}
+            isCrouching={isCrouching}
+            isReloading={isReloading}
+          />
+        ) : (
+          <AnimatedModel
+            isMoving={isMoving}
+            isSprinting={isSprinting}
+            isGrounded={state.isGrounded}
+          />
+        )}
       </group>
     </RigidBody>
   );

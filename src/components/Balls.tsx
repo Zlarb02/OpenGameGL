@@ -3,13 +3,17 @@ import { ShaderMaterial, Color } from 'three';
 import { RigidBody } from '@react-three/rapier';
 import { useControls } from 'leva';
 import { ToonVertexShader, ToonFragmentShader } from '../shaders/toonShader';
+import { createSectionControls } from '../utils/levaSectionManager';
 
 export function Balls() {
-  const controls = useControls('Balls', {
+  const controls = useControls('🎨 Balls', {
     bounciness: { value: 0.7, min: 0, max: 1, step: 0.1 },
     friction: { value: .25, min: 0, max: 1, step: 0.1 },
     outlineThickness: { value: 0.25, min: 0, max: 0.5, step: 0.01 },
-  });
+
+    // Section controls
+    ...createSectionControls('Balls', 'leva__🎨 Balls'),
+  }, { collapsed: true });
 
   const toonMaterial = useMemo(() => {
     return new ShaderMaterial({

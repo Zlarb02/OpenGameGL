@@ -6,8 +6,7 @@ import { CapsuleCollider, RigidBody, RapierRigidBody, useRapier } from '@react-t
 import { useCharacterControls } from '../hooks/useCharacterControls';
 import { calculateMovement, createJumpImpulse, createFallForce, createMovementVelocity } from '../../core/physics/physics';
 import { useMobileControls } from '../../ui/mobile/MobileControlsContext';
-import { AnimatedModel } from './AnimatedModel';
-import { AnimatedModelRifle } from '../player/tps/weapons/AnimatedModelRifle';
+import { PlayerCharacter } from '../player/PlayerCharacter';
 import { useWeaponState } from '../player/tps/weapons/useWeaponState';
 import { useCharacterSelector } from '../hooks/useCharacterSelector';
 import { useCharacterInput } from '../../core/input';
@@ -45,7 +44,7 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
     velocity: { x: 0, y: 0, z: 0 },
   });
 
-  // Stocker les inputs pour les passer à AnimatedModelRifle
+  // Stocker les inputs pour les passer à PlayerCharacter
   const [movementInput, setMovementInput] = useState({
     forward: false,
     backward: false,
@@ -171,8 +170,11 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
           0.2
         );
       }
-      
+
       modelRef.current.rotation.y = currentRotation.current;
+
+      // Force model matrix update for synchronization with camera
+      modelRef.current.updateMatrixWorld(true);
     }
 
     // Handle movement
@@ -213,13 +215,6 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
         moveForce * sprintMultiplier,
         linvel.y
       );
-      
-      // Smooth out the velocity changes
-      if (isGrounded) {
-        const smoothing = 0.25;
-        velocity.x = velocity.x * smoothing + linvel.x * (1 - smoothing);
-        velocity.z = velocity.z * smoothing + linvel.z * (1 - smoothing);
-      }
 
       rigidBody.current.setLinvel(velocity, true);
     } else if (isGrounded && !hasMovementInput) {
@@ -302,26 +297,15 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
         position={[0, modelYOffset + currentCrouchOffset.current, 0]}
         scale={modelScale}
       >
-        {weaponEquipped ? (
-          <AnimatedModelRifle
-            isMoving={isMoving}
-            isSprinting={isSprinting}
-            isGrounded={state.isGrounded}
-            movementInput={movementInput}
-            characterRotation={currentRotation.current}
-            cameraPhi={cameraPhi.current}
-            isAiming={isAiming}
-            isShooting={isShooting}
-            isCrouching={isCrouching}
-            isReloading={isReloading}
-          />
-        ) : (
-          <AnimatedModel
-            isMoving={isMoving}
-            isSprinting={isSprinting}
-            isGrounded={state.isGrounded}
-          />
-        )}
+        <PlayerCharacter
+          isMoving={isMoving}
+          isSprinting={isSprinting}
+          isGrounded={state.isGrounded}
+          movementInput={movementInput}
+          characterRotation={currentRotation.current}
+          cameraPhi={cameraPhi.current}
+          velocity={state.velocity}
+        />
       </group>
     </RigidBody>
   );

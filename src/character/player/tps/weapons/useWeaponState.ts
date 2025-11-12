@@ -1,21 +1,32 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useInput, GameAction } from '../../../../core/input';
 import { useInventory } from '../../inventory/InventoryContext';
+import { useEquipment } from '../../equipment/EquipmentContext';
+import { EquipmentSlotType } from '../../equipment/types/EquipmentTypes';
+import { useShootingCooldown } from './useShootingCooldown';
 
 export function useWeaponState() {
   const { inputManager, options } = useInput();
   const { hasItem } = useInventory();
+  const { getWieldedSlot, wield, stow, getEquipped } = useEquipment();
   const [weaponEquipped, setWeaponEquipped] = useState(false);
   const [isAiming, setIsAiming] = useState(false);
   const [isShooting, setIsShooting] = useState(false);
   const [isCrouching, setIsCrouching] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
 
-  const stowPressTime = useRef<number>(0);
-  const stowCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  // Shooting cooldown (600ms = typical shooting animation duration)
+  const shootingCooldown = useShootingCooldown({ cooldownDuration: 600 });
+
   const aimingRef = useRef(isAiming);
   const crouchingRef = useRef(isCrouching);
   const weaponEquippedRef = useRef(weaponEquipped);
+
+  // Sync weaponEquipped state with equipment system
+  useEffect(() => {
+    const wielded = getWieldedSlot();
+    setWeaponEquipped(wielded !== null);
+  }, [getWieldedSlot]);
 
   // Sync refs with state
   useEffect(() => {
@@ -44,52 +55,69 @@ export function useWeaponState() {
   // Setup event listeners for weapon actions
   useEffect(() => {
     // Toggle rifle avec slot 1 - only on justPressed
-    const handleQuickSlot = (state: any) => {
+    // NOTE: This is handled by useQuickSlotControls now, but kept for legacy compatibility
+    const handleQuickSlot = async (state: any) => {
       if (state.justPressed) {
-        // Vérifier si on a au moins un rifle dans l'inventaire
-        if (!hasItem('rifle')) {
-          console.log('❌ Pas de rifle dans l\'inventaire !');
-          return;
+        const currentWieldedSlot = getWieldedSlot();
+
+        if (currentWieldedSlot) {
+          // Weapon wielded, stow it
+          const success = await stow();
+          if (success) {
+            setWeaponEquipped(false);
+          }
+        } else {
+          // No weapon wielded, try to wield from back slots
+          const backLeft = getEquipped(EquipmentSlotType.BACK_LEFT);
+          const backRight = getEquipped(EquipmentSlotType.BACK_RIGHT);
+
+          if (backLeft) {
+            const success = await wield(EquipmentSlotType.BACK_LEFT);
+            if (success) {
+              setWeaponEquipped(true);
+            }
+          } else if (backRight) {
+            const success = await wield(EquipmentSlotType.BACK_RIGHT);
+            if (success) {
+              setWeaponEquipped(true);
+            }
+          } else {
+            console.log('❌ Pas d\'arme équipée sur le dos !');
+          }
         }
-        setWeaponEquipped(prev => !prev);
       }
     };
 
-    // Stow weapon logic - check hold duration
-    const handleStowPress = (state: any) => {
-      if (state.justPressed) {
-        stowPressTime.current = Date.now();
+    // Stow weapon with hold detection - simple copy of handleQuickSlot logic
+    const handleStowPress = async (state: any) => {
+      if (state.pressed && !state.justReleased) {
+        // Hold detected - toggle wield/stow
+        const currentWieldedSlot = getWieldedSlot();
 
-        // Start checking if held long enough
-        stowCheckInterval.current = setInterval(() => {
-          if (inputManager.isActionPressed(GameAction.STOW_WEAPON)) {
-            if (Date.now() - stowPressTime.current > 300) {
-              // Vérifier si on a au moins un rifle dans l'inventaire
-              if (!hasItem('rifle')) {
-                console.log('❌ Pas de rifle dans l\'inventaire !');
-                stowPressTime.current = 0;
-                if (stowCheckInterval.current) {
-                  clearInterval(stowCheckInterval.current);
-                  stowCheckInterval.current = null;
-                }
-                return;
-              }
-              setWeaponEquipped(prev => !prev);
-              stowPressTime.current = 0;
-              if (stowCheckInterval.current) {
-                clearInterval(stowCheckInterval.current);
-                stowCheckInterval.current = null;
-              }
-            }
+        if (currentWieldedSlot) {
+          // Weapon wielded, stow it
+          const success = await stow();
+          if (success) {
+            setWeaponEquipped(false);
           }
-        }, 50);
-      }
+        } else {
+          // No weapon wielded, try to wield from back slots
+          const backLeft = getEquipped(EquipmentSlotType.BACK_LEFT);
+          const backRight = getEquipped(EquipmentSlotType.BACK_RIGHT);
 
-      if (state.justReleased) {
-        stowPressTime.current = 0;
-        if (stowCheckInterval.current) {
-          clearInterval(stowCheckInterval.current);
-          stowCheckInterval.current = null;
+          if (backLeft) {
+            const success = await wield(EquipmentSlotType.BACK_LEFT);
+            if (success) {
+              setWeaponEquipped(true);
+            }
+          } else if (backRight) {
+            const success = await wield(EquipmentSlotType.BACK_RIGHT);
+            if (success) {
+              setWeaponEquipped(true);
+            }
+          } else {
+            console.log('❌ Pas d\'arme équipée sur le dos !');
+          }
         }
       }
     };
@@ -108,13 +136,18 @@ export function useWeaponState() {
       }
     };
 
-    // Fire logic
+    // Fire logic with cooldown
     const handleFire = (state: any) => {
       if (!weaponEquippedRef.current) return;
 
-      if (state.justPressed) {
+      if (state.justPressed && shootingCooldown.canShoot()) {
         setIsShooting(true);
-        setTimeout(() => setIsShooting(false), 500);
+
+        // Start cooldown based on animation duration (600ms)
+        shootingCooldown.startCooldown(600);
+
+        // Reset shooting state after a brief moment (just for trigger)
+        setTimeout(() => setIsShooting(false), 100);
       }
     };
 
@@ -156,23 +189,43 @@ export function useWeaponState() {
       inputManager.removeEventListener(GameAction.FIRE, handleFire);
       inputManager.removeEventListener(GameAction.RELOAD, handleReload);
       inputManager.removeEventListener(GameAction.CROUCH, handleCrouch);
-
-      // Clear any pending stow interval
-      if (stowCheckInterval.current) {
-        clearInterval(stowCheckInterval.current);
-      }
     };
-  }, [inputManager, options.aimMode, options.crouchMode, hasItem]);
+  }, [inputManager, options.aimMode, options.crouchMode, hasItem, getWieldedSlot, wield, stow, getEquipped]);
 
   // Fonction pour équiper/déséquiper le rifle programmatiquement
-  const equipWeapon = (equipped: boolean) => {
-    // Si on essaie d'équiper, vérifier qu'on a un rifle
-    if (equipped && !hasItem('rifle')) {
-      console.log('❌ Pas de rifle dans l\'inventaire !');
-      return;
+  const equipWeapon = async (equipped: boolean) => {
+    if (equipped) {
+      // Try to wield from back slots
+      const backLeft = getEquipped(EquipmentSlotType.BACK_LEFT);
+      const backRight = getEquipped(EquipmentSlotType.BACK_RIGHT);
+
+      if (backLeft) {
+        const success = await wield(EquipmentSlotType.BACK_LEFT);
+        if (success) {
+          setWeaponEquipped(true);
+        }
+      } else if (backRight) {
+        const success = await wield(EquipmentSlotType.BACK_RIGHT);
+        if (success) {
+          setWeaponEquipped(true);
+        }
+      } else {
+        console.log('❌ Pas d\'arme équipée sur le dos !');
+      }
+    } else {
+      // Stow the weapon
+      const success = await stow();
+      if (success) {
+        setWeaponEquipped(false);
+      }
     }
-    setWeaponEquipped(equipped);
   };
+
+  // Fonction pour toggle la visée programmatiquement (pour debug)
+  const toggleAiming = useCallback(() => {
+    if (!weaponEquippedRef.current) return;
+    setIsAiming(prev => !prev);
+  }, []);
 
   return {
     weaponEquipped,
@@ -181,5 +234,6 @@ export function useWeaponState() {
     isCrouching,
     isReloading,
     equipWeapon,
+    toggleAiming,
   };
 }

@@ -178,7 +178,7 @@ export interface ControlOptions {
  */
 export const DEFAULT_CONTROL_OPTIONS: ControlOptions = {
   autoDetectDevice: true,
-  mouseSensitivity: 0.002,
+  mouseSensitivity: 0.003,
   invertY: false,
   gamepadSensitivity: 1.0,
   gamepadInvertY: false,

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useShootingRaycast, HitResult } from '../shooting/useShootingRaycast';
+import { useShootingWithHealth } from '../shooting/useShootingWithHealth';
 import { useWeaponState } from '../weapons/useWeaponState';
 import { useHitDetection, HitType, HitMarkerData } from './HitDetectionContext';
 
@@ -11,33 +12,31 @@ export function HitDetectionManager() {
   const { isShooting, weaponEquipped } = useWeaponState();
   const { setLastHit, addHitMarker } = useHitDetection();
 
-  // Callback when a shot is fired
+  // Callback when a shot is fired (for old system compatibility)
   const handleHit = useCallback((result: HitResult) => {
     setLastHit(result);
 
+    // Old hit marker system - kept for backward compatibility
+    // New system is handled automatically in useShootingWithHealth
     if (!result.hit) {
       return;
     }
 
-    // Determine hit type (for now, everything is just a HIT)
-    // Later, we can check object properties/tags to determine KILL vs HIT
-    // For example: if object.userData.isEnemy && object.userData.health <= damage
     const hitType: HitType = 'HIT';
-
-    // Add hit marker at screen center
     const marker: HitMarkerData = {
       type: hitType,
       timestamp: Date.now(),
-      position: { x: 0.5, y: 0.5 } // Center of screen (normalized 0-1)
+      position: { x: 0.5, y: 0.5 }
     };
 
-    addHitMarker(marker);
+    // Note: This is the old system. New hit markers are shown via useShootingWithHealth
+    // addHitMarker(marker);
   }, [setLastHit, addHitMarker]);
 
-  // Use raycasting hook only when weapon is equipped
-  useShootingRaycast({
+  // Use NEW health-integrated shooting system
+  useShootingWithHealth({
     isShooting: weaponEquipped && isShooting,
-    onHit: handleHit,
+    damage: 10, // Rifle damage: 10 per shot
     maxDistance: 100
   });
 

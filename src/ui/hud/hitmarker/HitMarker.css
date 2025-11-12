@@ -1,0 +1,85 @@
+/* Hit Marker Container */
+.hit-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Individual hit marker line - diagonal X shape */
+.hit-marker-line {
+  position: absolute;
+  width: 3px;
+  height: 12px;
+  background-color: var(--hit-marker-color, #fff);
+  opacity: 0;
+  transform-origin: center;
+}
+
+/* Top-Left diagonal */
+.hit-marker-tl {
+  top: 4px;
+  left: 4px;
+  transform: rotate(-45deg);
+}
+
+/* Top-Right diagonal */
+.hit-marker-tr {
+  top: 4px;
+  right: 4px;
+  transform: rotate(45deg);
+}
+
+/* Bottom-Left diagonal */
+.hit-marker-bl {
+  bottom: 4px;
+  left: 4px;
+  transform: rotate(45deg);
+}
+
+/* Bottom-Right diagonal */
+.hit-marker-br {
+  bottom: 4px;
+  right: 4px;
+  transform: rotate(-45deg);
+}
+
+/* Animation when visible */
+.hit-marker.visible .hit-marker-line {
+  animation: hitMarkerPulse 0.4s ease-out forwards;
+}
+
+@keyframes hitMarkerPulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(var(--rotation, 0deg));
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2) rotate(var(--rotation, 0deg));
+  }
+}
+
+/* Specific rotations for each line */
+.hit-marker.visible .hit-marker-tl {
+  --rotation: -45deg;
+}
+
+.hit-marker.visible .hit-marker-tr {
+  --rotation: 45deg;
+}
+
+.hit-marker.visible .hit-marker-bl {
+  --rotation: 45deg;
+}
+
+.hit-marker.visible .hit-marker-br {
+  --rotation: -45deg;
+}

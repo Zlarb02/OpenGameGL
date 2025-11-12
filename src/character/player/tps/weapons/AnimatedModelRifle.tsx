@@ -6,6 +6,7 @@ import { FBXLoader, GLTFLoader } from 'three-stdlib';
 import { useCharacterSelector } from '../../../hooks/useCharacterSelector';
 import { useAimDebug } from '../shooting/useAimDebug';
 import { useRifleDebug } from './useRifleDebug';
+import { useEquipment } from '../../equipment/EquipmentContext';
 
 interface AnimatedModelRifleProps {
   isMoving: boolean;
@@ -56,6 +57,16 @@ export function AnimatedModelRifle({
   // Référence directe vers l'os spine pour le debug
   const spineBoneRef = useRef<Bone | null>(null);
 
+  // Equipment system integration
+  const { initializeSkeleton } = useEquipment();
+
+  // Initialize equipment system skeleton when model is loaded
+  useEffect(() => {
+    if (model) {
+      initializeSkeleton(model);
+      console.log('[AnimatedModelRifle] Initialized equipment skeleton');
+    }
+  }, [model, initializeSkeleton]);
 
   // Charger le modèle ET les animations rifle
   useEffect(() => {
@@ -85,6 +96,14 @@ export function AnimatedModelRifle({
         if (!mounted) return;
 
         modelFbx.scale.setScalar(0.01);
+
+        // Marquer tous les objets du personnage pour les ignorer dans les raycasts
+        modelFbx.traverse((child) => {
+          if (child) {
+            child.userData.isPlayerCharacter = true;
+          }
+        });
+
         setModel(modelFbx);
 
         // Charger les animations rifle essentielles
@@ -238,11 +257,15 @@ export function AnimatedModelRifle({
     const rifleGroup = new Group();
     const rifleClone = rifleScene.clone();
 
-    // Configurer les ombres
+    // Configurer les ombres et marquer comme personnage du joueur
     rifleClone.traverse((child) => {
       if ('castShadow' in child) {
         child.castShadow = true;
         child.receiveShadow = true;
+      }
+      // Marquer comme appartenant au joueur pour ignorer dans raycasts
+      if (child) {
+        child.userData.isPlayerCharacter = true;
       }
     });
 

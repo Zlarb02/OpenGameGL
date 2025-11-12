@@ -3,6 +3,7 @@ import { Group, LoopRepeat, AnimationClip } from 'three';
 import { useAnimations } from '@react-three/drei';
 import { FBXLoader, GLTFLoader } from 'three-stdlib';
 import { useCharacterSelector } from '../hooks/useCharacterSelector';
+import { useEquipment } from '../player/equipment/EquipmentContext';
 
 interface AnimatedModelProps {
   isMoving: boolean;
@@ -21,6 +22,17 @@ export function AnimatedModel({ isMoving, isSprinting, isGrounded }: AnimatedMod
   const [loading, setLoading] = useState(false);
   const [currentAnimation, setCurrentAnimation] = useState<string>('IDLE');
   const { modelPath } = useCharacterSelector();
+
+  // Equipment system integration
+  const { initializeSkeleton } = useEquipment();
+
+  // Initialize equipment system skeleton when model is loaded
+  useEffect(() => {
+    if (model) {
+      initializeSkeleton(model);
+      console.log('[AnimatedModel] Initialized equipment skeleton');
+    }
+  }, [model, initializeSkeleton]);
 
   // Charger le modèle sélectionné ET les animations
   useEffect(() => {

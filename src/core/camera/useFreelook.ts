@@ -3,7 +3,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { useInput, GameAction } from '../systems/input';
+import { useInput } from '../input';
+import { GameAction } from '../input/actions/ActionDefinitions';
 
 export function useFreelook() {
   const { inputManager } = useInput();
@@ -12,6 +13,12 @@ export function useFreelook() {
   const lastTapTime = useRef<number>(0);
 
   useEffect(() => {
+    // Debug: log toutes les touches pressées
+    const handleKeyDown = (e: KeyboardEvent) => {
+      console.log('[Freelook Debug] Key pressed:', e.code, e.key);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
     const updateInterval = setInterval(() => {
       const freelookPressed = inputManager.isActionPressed(GameAction.FREELOOK);
       const now = Date.now();
@@ -20,10 +27,14 @@ export function useFreelook() {
         // Première pression
         if (freelookPressTime.current === 0) {
           freelookPressTime.current = now;
+          console.log('[Freelook] Key pressed, starting timer');
         }
 
         // Hold mode (maintenir > 200ms)
         if (now - freelookPressTime.current > 200) {
+          if (!isFreelooking) {
+            console.log('[Freelook] Activating freelook (hold mode)');
+          }
           setIsFreelooking(true);
         }
       } else {
@@ -33,23 +44,15 @@ export function useFreelook() {
 
           // Tap mode (< 200ms) = toggle
           if (pressDuration < 200) {
-            // Double tap protection
-            if (now - lastTapTime.current < 300) {
-              // C'est un double tap, on toggle
-              setIsFreelooking(prev => !prev);
-              lastTapTime.current = 0;
-            } else {
-              lastTapTime.current = now;
-              // Simple tap - on attend de voir si c'est un double tap
-              setTimeout(() => {
-                if (Date.now() - lastTapTime.current >= 300) {
-                  // Pas de double tap, on toggle
-                  setIsFreelooking(prev => !prev);
-                }
-              }, 300);
-            }
+            console.log('[Freelook] Tap detected, toggling');
+            // Simple tap = toggle
+            setIsFreelooking(prev => {
+              console.log('[Freelook] Toggle:', !prev);
+              return !prev;
+            });
           } else {
             // Hold relâché - désactiver freelook
+            console.log('[Freelook] Hold released, deactivating');
             setIsFreelooking(false);
           }
 
@@ -58,7 +61,10 @@ export function useFreelook() {
       }
     }, 16); // ~60fps
 
-    return () => clearInterval(updateInterval);
+    return () => {
+      clearInterval(updateInterval);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [inputManager]);
 
   return {

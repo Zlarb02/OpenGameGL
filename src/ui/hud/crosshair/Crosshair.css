@@ -1,0 +1,39 @@
+/* Crosshair Container */
+.crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Crosshair lines */
+.crosshair-line {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Center dot */
+.crosshair-center {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Optional animations for different states */
+.crosshair.firing .crosshair-line {
+  animation: crosshairRecoil 0.1s ease-out;
+}
+
+@keyframes crosshairRecoil {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

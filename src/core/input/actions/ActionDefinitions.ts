@@ -269,7 +269,7 @@ export const ACTION_METADATA: Record<GameAction, ActionMetadata> = {
     supportsHold: true,
     supportsToggle: true,
     defaultMode: 'hold',
-    implemented: false,
+    implemented: true,
   },
   [GameAction.FREELOOK_TOGGLE]: {
     action: GameAction.FREELOOK_TOGGLE,
@@ -280,7 +280,7 @@ export const ACTION_METADATA: Record<GameAction, ActionMetadata> = {
     supportsHold: false,
     supportsToggle: false,
     defaultMode: 'tap',
-    implemented: false,
+    implemented: true,
   },
   [GameAction.ZOOM_IN]: {
     action: GameAction.ZOOM_IN,

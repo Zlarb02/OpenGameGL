@@ -20,13 +20,23 @@ export function useCameraControls() {
     heightRifle: { value: 2.2, min: 0, max: 10, step: 0.1, label: 'Height (Rifle)' },
     shoulderOffsetRifle: { value: 0.8, min: -2, max: 2, step: 0.1, label: 'Shoulder Offset (Rifle)' },
 
+    // ADS (Aim Down Sights) - Offsets de position caméra lors de la visée
+    adsEnabled: { value: true, label: 'Enable ADS Offset' },
+    adsOffsetX: { value: 0.23, min: -1, max: 1, step: 0.01, label: 'ADS Offset X (right)' },
+    adsOffsetY: { value: 0.0, min: -1, max: 1, step: 0.01, label: 'ADS Offset Y (up)' },
+    adsOffsetZ: { value: -1.0, min: -2, max: 0.5, step: 0.01, label: 'ADS Offset Z (forward)' },
+    adsTransitionSpeed: { value: 0.15, min: 0.01, max: 1, step: 0.01, label: 'ADS Transition Speed' },
+    adsFov: { value: 50, min: 30, max: 75, step: 1, label: 'ADS FOV (zoom)' },
+    normalFov: { value: 75, min: 50, max: 90, step: 1, label: 'Normal FOV' },
+    fovTransitionSpeed: { value: 0.1, min: 0.01, max: 0.5, step: 0.01, label: 'FOV Transition Speed' },
+
     // Vertical rotation limits (in degrees)
     minPolarAngle: { value: 1, min: 0, max: 89, step: 1 },
     maxPolarAngle: { value: 175, min: 90, max: 179, step: 1 },
     
     // Smoothing (spring physics)
     positionSmoothing: { value: 0.1, min: 0.01, max: 0.5, step: 0.01 },
-    rotationSmoothing: { value: 0.15, min: 0.01, max: 0.5, step: 0.01 },
+    rotationSmoothing: { value: 0.1, min: 0.01, max: 0.5, step: 0.01 },
     
     // Collision
     collisionEnabled: { value: true },

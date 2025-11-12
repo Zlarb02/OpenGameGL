@@ -93,7 +93,7 @@ export class InputManager {
 
     this.setupEventListeners();
     this.loadOptions();
-    this.loadBindings();
+    // NE PAS charger les bindings ici - attendre initialize() pour avoir le bon layout
   }
 
   /**
@@ -110,17 +110,17 @@ export class InputManager {
    * Initialiser le système d'input
    */
   public async initialize(): Promise<void> {
-    // Détecter le layout clavier
+    // Détecter le layout clavier AVANT tout
     this.keyboardLayout = await detectKeyboardLayout();
     this.activeDevice.keyboardLayout = this.keyboardLayout;
 
-    // Recréer les bindings avec le bon layout
+    // Recréer les bindings avec le bon layout détecté
     this.keyboardBindings = createDefaultKeyboardBindings(this.keyboardLayout);
     if (this.activeDevice.type === DeviceType.KEYBOARD_MOUSE) {
       this.currentBindings = this.keyboardBindings;
     }
 
-    // Recharger les bindings personnalisés si présents
+    // MAINTENANT on peut charger les bindings personnalisés (avec le bon layout de base)
     this.loadBindings();
 
     console.log('[InputManager] Initialized', {

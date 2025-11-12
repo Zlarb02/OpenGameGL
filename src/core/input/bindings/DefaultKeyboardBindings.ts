@@ -70,12 +70,12 @@ export function createDefaultKeyboardBindings(layout: KeyboardLayout): DeviceBin
     // === CAMERA ===
     {
       action: GameAction.FREELOOK,
-      primary: { type: 'keyboard', key: moveKeys.forward }, // W en QWERTY, Z en AZERTY
+      primary: { type: 'keyboard', key: layout === KeyboardLayout.AZERTY ? 'KeyZ' : 'KeyZ' }, // KeyZ = W affiché sur AZERTY (libre), Z affiché sur QWERTY (libre)
       mode: 'hold',
     },
     {
       action: GameAction.FREELOOK_TOGGLE,
-      primary: { type: 'keyboard', key: moveKeys.forward }, // Tap W
+      primary: { type: 'keyboard', key: layout === KeyboardLayout.AZERTY ? 'KeyZ' : 'KeyZ' }, // Tap
       mode: 'tap',
     },
     {

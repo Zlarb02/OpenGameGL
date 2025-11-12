@@ -17,10 +17,13 @@ export function useInventoryControls() {
       }
     };
 
+    // Listen to both 'i' key (INVENTORY) and Tab key (QUICK_INVENTORY)
     inputManager.addEventListener(GameAction.INVENTORY, handleInventoryToggle);
+    inputManager.addEventListener(GameAction.QUICK_INVENTORY, handleInventoryToggle);
 
     return () => {
       inputManager.removeEventListener(GameAction.INVENTORY, handleInventoryToggle);
+      inputManager.removeEventListener(GameAction.QUICK_INVENTORY, handleInventoryToggle);
     };
   }, [inputManager, toggleInventory]);
 }

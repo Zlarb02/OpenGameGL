@@ -20,7 +20,7 @@ export const WEAPONS: WeaponEquipment[] = [
     name: 'Rifle',
     category: EquipmentCategory.WEAPON,
     weaponType: WeaponType.RIFLE,
-    icon: '🔫',
+    icon: '/icons/weapons/rifle.png',
     stackable: false,
     maxStackSize: 1,
 
@@ -37,14 +37,64 @@ export const WEAPONS: WeaponEquipment[] = [
     requiresAiming: true,
     twoHanded: true,
 
-    // Can be equipped to back or hand
+    // Can ONLY be equipped to back slots (not hand - use wield() for that)
     compatibleSlots: [
       EquipmentSlotType.BACK_LEFT,
       EquipmentSlotType.BACK_RIGHT,
-      EquipmentSlotType.HAND_PRIMARY,
     ],
   },
-  // Additional weapons can be added here
+  {
+    id: 'iron-sword',
+    name: 'Iron Sword',
+    category: EquipmentCategory.WEAPON,
+    weaponType: WeaponType.SWORD,
+    icon: '/icons/weapons/sword.png',
+    stackable: false,
+    maxStackSize: 1,
+
+    // Weapon stats
+    damage: 25,
+    range: 2,
+
+    // Visual
+    modelPath: '/models/weapons/iron-sword.glb',
+
+    // Behavior
+    requiresAiming: false,
+    twoHanded: false,
+
+    // Can ONLY be equipped to back slots (not hand - use wield() for that)
+    compatibleSlots: [
+      EquipmentSlotType.BACK_LEFT,
+      EquipmentSlotType.BACK_RIGHT,
+    ],
+  },
+  {
+    id: 'copper-shield',
+    name: 'Copper Shield',
+    category: EquipmentCategory.WEAPON,
+    weaponType: WeaponType.SHIELD,
+    icon: '/icons/weapons/shield.png',
+    stackable: false,
+    maxStackSize: 1,
+
+    // Weapon stats (defensive)
+    damage: 5,
+    range: 1,
+
+    // Visual
+    modelPath: '/models/weapons/copper-shield.glb',
+
+    // Behavior
+    requiresAiming: false,
+    twoHanded: false,
+
+    // Can ONLY be equipped to back slots (not hand - use wield() for that)
+    compatibleSlots: [
+      EquipmentSlotType.BACK_LEFT,
+      EquipmentSlotType.BACK_RIGHT,
+    ],
+  },
 ];
 
 /**

@@ -8,7 +8,7 @@ import { useShootingCooldown } from './useShootingCooldown';
 export function useWeaponState() {
   const { inputManager, options } = useInput();
   const { hasItem } = useInventory();
-  const { getWieldedSlot, wield, stow, getEquipped } = useEquipment();
+  const { getWieldedSlot, wield, stow, getEquipped, equippedItemsVersion } = useEquipment();
   const [weaponEquipped, setWeaponEquipped] = useState(false);
   const [isAiming, setIsAiming] = useState(false);
   const [isShooting, setIsShooting] = useState(false);
@@ -26,7 +26,7 @@ export function useWeaponState() {
   useEffect(() => {
     const wielded = getWieldedSlot();
     setWeaponEquipped(wielded !== null);
-  }, [getWieldedSlot]);
+  }, [getWieldedSlot, equippedItemsVersion]);
 
   // Sync refs with state
   useEffect(() => {
@@ -175,19 +175,21 @@ export function useWeaponState() {
 
     // Register all listeners
     inputManager.addEventListener(GameAction.QUICK_SLOT_1, handleQuickSlot);
-    inputManager.addEventListener(GameAction.STOW_WEAPON, handleStowPress);
+    // NOTE: STOW_WEAPON is now handled by useReloadStowControls (R key with tap/hold/long-hold)
+    // inputManager.addEventListener(GameAction.STOW_WEAPON, handleStowPress);
     inputManager.addEventListener(GameAction.AIM, handleAim);
     inputManager.addEventListener(GameAction.FIRE, handleFire);
-    inputManager.addEventListener(GameAction.RELOAD, handleReload);
+    // NOTE: RELOAD is now handled by useReloadStowControls (R tap when wielded)
+    // inputManager.addEventListener(GameAction.RELOAD, handleReload);
     inputManager.addEventListener(GameAction.CROUCH, handleCrouch);
 
     // Cleanup
     return () => {
       inputManager.removeEventListener(GameAction.QUICK_SLOT_1, handleQuickSlot);
-      inputManager.removeEventListener(GameAction.STOW_WEAPON, handleStowPress);
+      // inputManager.removeEventListener(GameAction.STOW_WEAPON, handleStowPress);
       inputManager.removeEventListener(GameAction.AIM, handleAim);
       inputManager.removeEventListener(GameAction.FIRE, handleFire);
-      inputManager.removeEventListener(GameAction.RELOAD, handleReload);
+      // inputManager.removeEventListener(GameAction.RELOAD, handleReload);
       inputManager.removeEventListener(GameAction.CROUCH, handleCrouch);
     };
   }, [inputManager, options.aimMode, options.crouchMode, hasItem, getWieldedSlot, wield, stow, getEquipped]);

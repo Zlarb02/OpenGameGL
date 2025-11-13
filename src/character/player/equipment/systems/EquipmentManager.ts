@@ -3,10 +3,12 @@
  * Manages equipped items and inventory integration
  */
 
-import { Equipment, EquipmentSlotType, WeaponState } from '../types/EquipmentTypes';
+import * as THREE from 'three';
+import { Equipment, EquipmentSlotType, WeaponState, WeaponEquipment } from '../types/EquipmentTypes';
 import { AttachmentSystem } from './AttachmentSystem';
 import { EquipmentRenderer } from './EquipmentRenderer';
 import { EquipmentRegistry } from '../config/EquipmentRegistry';
+import { WeaponTransformOverrides } from '../config/WeaponTransformOverrides';
 
 /**
  * Manages equipped items and inventory integration
@@ -77,13 +79,57 @@ export class EquipmentManager {
     const equipment = this.equippedItems.get(slot);
     if (!equipment) return null;
 
+    // Determine which slot to detach from
+    // If the weapon is wielded, it's attached to HAND_PRIMARY, not the original slot
+    const slotToDetach = this.wieldedSlot === slot ? EquipmentSlotType.HAND_PRIMARY : slot;
+
+    console.log(`[EquipmentManager] Unequipping from ${slotToDetach} (original slot: ${slot}, wielded: ${this.wieldedSlot === slot})`);
+
     // Detach visual
-    this.attachmentSystem.detach(slot);
+    this.attachmentSystem.detach(slotToDetach);
+
+    // Clear wielded state if this was the wielded weapon
+    if (this.wieldedSlot === slot) {
+      console.log('[EquipmentManager] Clearing wielded slot');
+      this.wieldedSlot = null;
+    }
 
     // Remove from equipped items
     this.equippedItems.delete(slot);
 
     return equipment;
+  }
+
+  /**
+   * Unequip item and return both Equipment and the 3D model
+   * Used for dropping items to reuse the existing model
+   */
+  async unequipAndReturnModel(slot: EquipmentSlotType): Promise<{ equipment: Equipment; model: THREE.Object3D } | null> {
+    const equipment = this.equippedItems.get(slot);
+    if (!equipment) return null;
+
+    // Determine which slot to detach from
+    // If the weapon is wielded, it's attached to HAND_PRIMARY, not the original slot
+    const slotToDetach = this.wieldedSlot === slot ? EquipmentSlotType.HAND_PRIMARY : slot;
+
+    console.log(`[EquipmentManager] Detaching from ${slotToDetach} (original slot: ${slot}, wielded: ${this.wieldedSlot === slot})`);
+
+    // Detach visual and return the Object3D
+    const model = this.attachmentSystem.detachAndReturn(slotToDetach);
+    if (!model) {
+      console.error('[EquipmentManager] Failed to detach model from', slotToDetach);
+      return null;
+    }
+
+    // Clear wielded state if this was the wielded weapon
+    if (this.wieldedSlot === slot) {
+      this.wieldedSlot = null;
+    }
+
+    // Remove from equipped items
+    this.equippedItems.delete(slot);
+
+    return { equipment, model };
   }
 
   /**
@@ -185,6 +231,22 @@ export class EquipmentManager {
   }
 
   /**
+   * Get first available slot from equipment's compatible slots
+   * Generic version that works for any equipment type
+   */
+  getFirstAvailableSlot(equipment: Equipment): EquipmentSlotType | null {
+    const compatibleSlots = equipment.compatibleSlots || [];
+
+    for (const slot of compatibleSlots) {
+      if (!this.equippedItems.has(slot)) {
+        return slot;
+      }
+    }
+
+    return null; // All compatible slots are occupied
+  }
+
+  /**
    * Get first available thigh slot
    */
   getFirstAvailableThighSlot(): EquipmentSlotType | null {
@@ -245,9 +307,32 @@ export class EquipmentManager {
       return true;
     }
 
-    // If wielding another weapon, stow it first
-    if (this.wieldedSlot) {
-      await this.stow();
+    // If currently wielding another weapon, stow it inline (without setting wieldedSlot to null)
+    // This prevents intermediate state where no weapon is wielded
+    if (this.wieldedSlot && this.wieldedSlot !== slot) {
+      const currentWieldedSlot = this.wieldedSlot;
+      const currentEquipment = this.equippedItems.get(currentWieldedSlot);
+
+      if (currentEquipment) {
+        console.log(`[EquipmentManager] Inline stow: ${currentEquipment.name} from ${currentWieldedSlot}`);
+
+        // Detach from hand
+        this.attachmentSystem.detach(EquipmentSlotType.HAND_PRIMARY);
+
+        // Re-attach to original stowed position (back)
+        const stowModel = await this.renderer.loadModel(currentEquipment);
+        if (stowModel) {
+          this.attachmentSystem.attach(currentEquipment, currentWieldedSlot, stowModel);
+        }
+      }
+    }
+
+    // Check for orphan weapon in hand (weapon without a wieldedSlot reference)
+    const handEquipment = this.equippedItems.get(EquipmentSlotType.HAND_PRIMARY);
+    if (handEquipment && !this.wieldedSlot) {
+      console.warn('[EquipmentManager] Removing orphan weapon from hand to make room for wield');
+      this.attachmentSystem.detach(EquipmentSlotType.HAND_PRIMARY);
+      this.equippedItems.delete(EquipmentSlotType.HAND_PRIMARY);
     }
 
     // Detach from back/stowed position
@@ -276,7 +361,9 @@ export class EquipmentManager {
       return false;
     }
 
+    // Set wielded slot atomically (only one state change)
     this.wieldedSlot = slot;
+    console.log(`[EquipmentManager] Wielded ${equipment.name} to slot ${slot}`);
 
     return true;
   }
@@ -352,5 +439,39 @@ export class EquipmentManager {
       return WeaponState.WIELDED;
     }
     return WeaponState.STOWED;
+  }
+
+  /**
+   * Refresh transforms of all equipped items from WeaponTransformOverrides
+   * Used for real-time Leva debugging
+   * Only updates stowed equipment (not wielded), as wielded equipment uses hand transforms
+   */
+  refreshTransforms(): void {
+    for (const [slot, equipment] of this.equippedItems.entries()) {
+      // Skip wielded equipment (it's in hand, not in back slot)
+      if (this.wieldedSlot === slot) {
+        continue;
+      }
+
+      // Only update weapon equipment with overrides
+      if ('weaponType' in equipment) {
+        const weaponEquipment = equipment as WeaponEquipment;
+        const override = WeaponTransformOverrides.get(weaponEquipment.weaponType, slot);
+
+        if (override) {
+          // Update the transform of the attached equipment
+          const success = this.attachmentSystem.updateTransform(
+            slot,
+            override.position,
+            override.rotation,
+            override.scale
+          );
+
+          if (success) {
+            console.log(`[EquipmentManager] ✓ Refreshed transform for ${weaponEquipment.weaponType} in ${slot}`);
+          }
+        }
+      }
+    }
   }
 }

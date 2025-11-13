@@ -10,6 +10,7 @@ import { PlayerCharacter } from '../player/PlayerCharacter';
 import { useWeaponState } from '../player/tps/weapons/useWeaponState';
 import { useCharacterSelector } from '../hooks/useCharacterSelector';
 import { useCharacterInput } from '../../core/input';
+import { useCharacterTransform } from './CharacterTransformContext';
 
 export type CharacterState = {
   moveSpeed: number;
@@ -27,6 +28,7 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
   const { rapier, world } = useRapier();
   const { isJumping: isMobileJumping, movement: mobileMovement } = useMobileControls();
   const input = useCharacterInput(); // Nouveau système d'input
+  const { updateTransform } = useCharacterTransform();
   const [isSprinting, setIsSprinting] = useState(false);
   const prevPosition = useRef(new Vector3());
   const [isMoving, setIsMoving] = useState(false);
@@ -250,13 +252,16 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
       prevPosition.current.copy(currentPos);
     }
 
-    setState({ 
-      moveSpeed: controls.moveSpeed, 
-      jumpForce: controls.jumpForce, 
-      airControl: controls.airControl, 
-      isGrounded, 
-      velocity: linvel 
+    setState({
+      moveSpeed: controls.moveSpeed,
+      jumpForce: controls.jumpForce,
+      airControl: controls.airControl,
+      isGrounded,
+      velocity: linvel
     });
+
+    // Update character transform for other systems (drop, etc.)
+    updateTransform(currentPos, currentRotation.current);
   });
 
   // Update ref for camera

@@ -1,80 +1,74 @@
 /**
  * Quickbar Component
- * Displays quick access slots for equipment (1-8)
+ * Displays equipment slots (1-8) automatically synced with EquipmentContext
+ * Slots 1-2 = Back slots, 3-4 = Thigh slots, 5-8 = Belt slots
  */
 
-import React from 'react';
-import { useEquipment } from '../../character/player/equipment/EquipmentContext';
-import { EquipmentRegistry } from '../../character/player/equipment/config/EquipmentRegistry';
-import { useInventory } from '../../character/player/inventory/InventoryContext';
-import { useQuickbarVisibility } from './useQuickbarVisibility';
-
-// Export visibility controls for use in other components
-export { useQuickbarVisibility };
+import { useQuickbar } from './QuickbarContext';
+import { Equipment } from '../../character/player/equipment/types/EquipmentTypes';
 
 interface QuickbarSlotProps {
   slotNumber: number;
-  icon?: string;
-  isOccupied: boolean;
+  displayName: string;
+  equipment: Equipment | null;
   isActive?: boolean;
 }
 
-function QuickbarSlot({ slotNumber, icon, isOccupied, isActive }: QuickbarSlotProps) {
+function QuickbarSlot({ slotNumber, displayName, equipment, isActive }: QuickbarSlotProps) {
   return (
-    <div
-      className={`
-        relative w-14 h-14 rounded-lg border-2 transition-all
-        ${isActive ? 'border-yellow-400 bg-yellow-400/20' : 'border-gray-600 bg-gray-900/80'}
-        ${isOccupied ? 'bg-gray-800/90' : 'bg-gray-900/60'}
-        backdrop-blur-sm
-        flex items-center justify-center
-      `}
-    >
-      {/* Slot number badge */}
-      <div className="absolute -top-2 -left-2 w-5 h-5 rounded-full bg-gray-700 border border-gray-500 flex items-center justify-center text-xs font-bold text-white">
-        {slotNumber}
+    <div className="flex flex-col items-center gap-1">
+      {/* Slot container */}
+      <div
+        className={`
+          relative w-14 h-14 rounded border transition-all
+          ${isActive ? 'border-white/60 bg-white/30 shadow-lg' : 'border-white/20 bg-white/10'}
+          backdrop-blur-sm flex items-center justify-center
+        `}
+      >
+        {/* Slot number badge */}
+        <div className="absolute -top-1 -left-1 w-4 h-4 rounded-sm bg-black/60 border border-white/20 flex items-center justify-center text-[10px] font-bold text-white">
+          {slotNumber}
+        </div>
+
+        {/* Equipment icon */}
+        {equipment && (
+          <div className="w-10 h-10 flex items-center justify-center">
+            {equipment.icon?.startsWith('/') ? (
+              <img src={equipment.icon} alt={equipment.name} className="w-full h-full object-contain drop-shadow-lg" />
+            ) : (
+              <span className="text-2xl drop-shadow-lg">{equipment.icon || '📦'}</span>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Item icon */}
-      {isOccupied && icon && (
-        <div className="text-2xl">
-          {icon}
-        </div>
-      )}
-
-      {/* Empty slot indicator */}
-      {!isOccupied && (
-        <div className="text-gray-600 text-xs">-</div>
-      )}
+      {/* Slot display name */}
+      <div className="text-[9px] font-bold text-white/70 uppercase tracking-wider whitespace-nowrap">
+        {displayName}
+      </div>
     </div>
   );
 }
 
 export function Quickbar() {
-  const { getEquipped, isWielded, equippedItemsVersion } = useEquipment();
+  const { slots, activeSlotIndex, isVisible } = useQuickbar();
 
-  // Get all quickbar slots from registry
-  const quickbarSlots = EquipmentRegistry.getQuickbarSlots();
+  if (!isVisible) return null;
 
-  // Only show first 8 slots (for keys 1-8)
-  const displaySlots = quickbarSlots.slice(0, 8);
-
-  // Always visible - removed conditional rendering
   return (
     <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-40">
-      <div className="flex gap-2 p-2 rounded-xl bg-black/40 backdrop-blur-md border border-gray-700/50">
-        {displaySlots.map((slotConfig, index) => {
-          const slotNumber = index + 1;
-          const equipped = getEquipped(slotConfig.slotType);
-          const active = isWielded(slotConfig.slotType);
+      <div className="flex gap-2 p-3 rounded-lg bg-black/40 backdrop-blur-md border border-white/10">
+        {slots.map((slot) => {
+          const slotNumber = slot.index + 1;
+          const isActive = activeSlotIndex === slot.index;
 
           return (
             <QuickbarSlot
-              key={slotConfig.slotType}
+              key={slot.index}
               slotNumber={slotNumber}
-              icon={equipped?.icon}
-              isOccupied={!!equipped}
-              isActive={active}
+              displayName={slot.displayName}
+              equipment={slot.equipment}
+              isActive={isActive}
             />
           );
         })}

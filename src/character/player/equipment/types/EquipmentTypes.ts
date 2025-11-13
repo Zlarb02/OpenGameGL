@@ -9,6 +9,7 @@
 export enum EquipmentCategory {
   WEAPON = 'weapon',
   CONSUMABLE = 'consumable',
+  TOOL = 'tool',
   QUEST = 'quest',
   MISCELLANEOUS = 'miscellaneous',
 }
@@ -60,6 +61,8 @@ export enum WeaponType {
   KNIFE = 'knife',
   GRENADE = 'grenade',
   MOLOTOV = 'molotov',
+  SWORD = 'sword',
+  SHIELD = 'shield',
 }
 
 /**
@@ -70,6 +73,16 @@ export enum ConsumableType {
   FOOD = 'food',
   POTION = 'potion',
   BANDAGE = 'bandage',
+}
+
+/**
+ * Tool Type
+ */
+export enum ToolType {
+  FLASHLIGHT = 'flashlight',
+  LANTERN = 'lantern',
+  BINOCULARS = 'binoculars',
+  COMPASS = 'compass',
 }
 
 /**
@@ -124,6 +137,7 @@ export interface EquipmentAttachmentConfig {
  */
 export interface EquipmentSlotConfig {
   slotType: EquipmentSlotType;
+  displayName: string;                // Display name (e.g., "DOS 1", "HOLSTER", "POCHE 1")
   category: EquipmentCategory;
 
   // Compatibility
@@ -196,6 +210,27 @@ export interface ConsumableEquipment extends BaseEquipment {
 }
 
 /**
+ * Tool Equipment
+ */
+export interface ToolEquipment extends BaseEquipment {
+  category: EquipmentCategory.TOOL;
+  toolType: ToolType;
+
+  // Tool behavior
+  isToggleable: boolean;              // Can be toggled on/off (e.g., flashlight)
+  consumesPower?: boolean;            // Requires power/battery
+  durability?: number;                // Tool durability
+
+  // Visual/Audio
+  modelPath?: string;
+  activateSound?: string;
+  deactivateSound?: string;
+
+  // Slots
+  compatibleSlots: EquipmentSlotType[];
+}
+
+/**
  * Quest Item Equipment
  */
 export interface QuestEquipment extends BaseEquipment {
@@ -210,4 +245,4 @@ export interface QuestEquipment extends BaseEquipment {
 /**
  * Union type for all equipment
  */
-export type Equipment = WeaponEquipment | ConsumableEquipment | QuestEquipment;
+export type Equipment = WeaponEquipment | ConsumableEquipment | ToolEquipment | QuestEquipment;

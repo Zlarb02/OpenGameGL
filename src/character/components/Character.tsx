@@ -10,7 +10,7 @@ import { FBXLoader, GLTFLoader } from 'three-stdlib';
 import { useFrame } from '@react-three/fiber';
 import { AnimationLayerSystem } from '../animation/AnimationLayerSystem';
 import { IAnimationLayer, AnimationContext } from '../animation/AnimationTypes';
-import { AimOffsetLayer } from '../animation/layers/AimOffsetLayer';
+import { AimOffset } from '../animation/layers/AimOffset';
 import { useEquipment } from '../player/equipment/EquipmentContext';
 import { useCharacterReady } from './CharacterReadyContext';
 import { useShootingAnimation } from '../animation/useShootingAnimation';
@@ -167,8 +167,8 @@ export function Character({
         await layer.initialize();
         layerSystem.registerLayer(layer);
 
-        // Set spine bone reference for AimOffsetLayer
-        if (layer instanceof AimOffsetLayer && spineBoneRef.current) {
+        // Set spine bone reference for AimOffset
+        if (layer instanceof AimOffset && spineBoneRef.current) {
           layer.setSpineBone(spineBoneRef.current);
         }
       }
@@ -235,10 +235,10 @@ export function Character({
           spineBoneRef.current = child;
           console.log('[Character] Found spine bone for aim:', child.name);
 
-          // Set spine bone for any AimOffsetLayer in layers
+          // Set spine bone for any AimOffset in layers
           if (layerSystemRef.current) {
             const aimOffsetLayer = layerSystemRef.current.getLayer('aimOffset');
-            if (aimOffsetLayer && aimOffsetLayer instanceof AimOffsetLayer) {
+            if (aimOffsetLayer && aimOffsetLayer instanceof AimOffset) {
               aimOffsetLayer.setSpineBone(child);
             }
           }

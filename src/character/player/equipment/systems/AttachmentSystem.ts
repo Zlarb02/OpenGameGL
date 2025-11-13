@@ -4,8 +4,9 @@
  */
 
 import { Group, Bone, Object3D } from 'three';
-import { Equipment, EquipmentSlotType, AttachmentBehavior } from '../types/EquipmentTypes';
+import { Equipment, EquipmentSlotType, AttachmentBehavior, WeaponEquipment } from '../types/EquipmentTypes';
 import { EquipmentRegistry } from '../config/EquipmentRegistry';
+import { WeaponTransformOverrides } from '../config/WeaponTransformOverrides';
 
 /**
  * Manages equipment visual attachment to character skeleton
@@ -101,7 +102,8 @@ export class AttachmentSystem {
         return this.attachToBone(
           model,
           attachmentConfig,
-          slotType
+          slotType,
+          equipment
         );
 
       case AttachmentBehavior.WORLD_POSITION:
@@ -127,7 +129,8 @@ export class AttachmentSystem {
   private attachToBone(
     model: Object3D,
     config: any,
-    slotType: EquipmentSlotType
+    slotType: EquipmentSlotType,
+    equipment?: Equipment
   ): boolean {
     if (!config.boneName) {
       console.error('[AttachmentSystem] ✗ Bone name required for bone attachment');
@@ -151,10 +154,21 @@ export class AttachmentSystem {
     attachmentGroup.name = `attachment_${slotType}`;
     attachmentGroup.add(model);
 
+    // Check for weapon-specific transform overrides
+    let finalTransform = config;
+    if (equipment && 'weaponType' in equipment) {
+      const weaponEquipment = equipment as WeaponEquipment;
+      const override = WeaponTransformOverrides.get(weaponEquipment.weaponType, slotType);
+      if (override) {
+        finalTransform = override;
+        console.log(`[AttachmentSystem] ✓ Using override for ${weaponEquipment.weaponType} in ${slotType}`);
+      }
+    }
+
     // Apply transform to group (not to model)
-    attachmentGroup.position.set(...config.position);
-    attachmentGroup.rotation.set(...config.rotation);
-    attachmentGroup.scale.setScalar(config.scale);
+    attachmentGroup.position.set(...finalTransform.position);
+    attachmentGroup.rotation.set(...finalTransform.rotation);
+    attachmentGroup.scale.setScalar(finalTransform.scale);
 
     // CRITICAL: Disable auto-update to prevent animations from overriding transforms
     attachmentGroup.matrixAutoUpdate = false;
@@ -224,6 +238,24 @@ export class AttachmentSystem {
   }
 
   /**
+   * Detach equipment and return the Object3D (for dropping items)
+   */
+  detachAndReturn(slotType: EquipmentSlotType): Object3D | null {
+    const attached = this.attachedEquipment.get(slotType);
+    if (!attached) return null;
+
+    // Remove from parent but keep the object
+    if (attached.parent) {
+      attached.parent.remove(attached);
+    }
+
+    this.attachedEquipment.delete(slotType);
+
+    // Return the detached object so it can be reused
+    return attached;
+  }
+
+  /**
    * Toggle visibility of equipment in slot
    */
   setVisible(slotType: EquipmentSlotType, visible: boolean) {
@@ -273,9 +305,23 @@ export class AttachmentSystem {
     const attached = this.attachedEquipment.get(slotType);
     if (!attached) return false;
 
+    // Temporarily enable auto-update for smooth real-time changes
+    // This allows Three.js to properly update the matrix every frame
+    const wasAutoUpdate = attached.matrixAutoUpdate;
+    attached.matrixAutoUpdate = true;
+
+    // Apply new transforms
     attached.position.set(...position);
     attached.rotation.set(...rotation);
     attached.scale.setScalar(scale);
+
+    // Force immediate matrix update
+    attached.updateMatrix();
+    attached.updateMatrixWorld(true);
+
+    // Keep auto-update enabled for debugging (prevents "frozen" equipment)
+    // If you experience animation conflicts, set this back to wasAutoUpdate
+    // attached.matrixAutoUpdate = wasAutoUpdate;
 
     return true;
   }

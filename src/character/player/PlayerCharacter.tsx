@@ -6,16 +6,15 @@
 
 import { useMemo, useEffect, useRef, useCallback } from 'react';
 import { Character } from '../components/Character';
-import { LocomotionLayer } from '../animation/layers/LocomotionLayer';
-import { TPSLayer } from '../animation/layers/TPSLayer';
-import { AimOffsetLayer } from '../animation/layers/AimOffsetLayer';
+import { Locomotion } from '../animation/layers/Locomotion';
+import { TPS_Rifle } from '../animation/layers/TPS_Rifle';
+import { AimOffset } from '../animation/layers/AimOffset';
 import { AnimationLayerSystem } from '../animation/AnimationLayerSystem';
 import { useCharacterSelector } from '../hooks/useCharacterSelector';
 import { useWeaponState } from './tps/weapons/useWeaponState';
 import { useAimDebug } from './tps/shooting/useAimDebug';
 import { useEquipment } from './equipment/EquipmentContext';
-import { useBackWeaponDebug } from './equipment/hooks/useEquipmentDebug';
-import { EquipmentDebugger } from './equipment/components/EquipmentDebugger';
+import { useQuickbar } from '../../ui/quickbar/QuickbarContext';
 
 export interface PlayerCharacterProps {
   isMoving: boolean;
@@ -47,29 +46,33 @@ export function PlayerCharacter({
   const { modelPath, modelScale, modelYOffset } = useCharacterSelector();
   const { weaponEquipped, isAiming, isShooting, isCrouching, isReloading } = useWeaponState();
   const { enableManualAim, manualAimAngle } = useAimDebug();
-  const { equippedItemsVersion, getWieldedSlot } = useEquipment(); // Track equipment changes
-  const layerSystemRef = useRef<AnimationLayerSystem | null>(null);
-  const aimOffsetLayerRef = useRef<AimOffsetLayer | null>(null);
-  const previousWieldedSlotRef = useRef<ReturnType<typeof getWieldedSlot>>(null);
+  const { equippedItemsVersion, getWieldedSlot, getAllEquipped } = useEquipment(); // Track equipment changes
+  const { syncSlots } = useQuickbar(); // Sync quickbar with equipment
 
-  // Debug controls for back weapons
-  const backLeftDebug = useBackWeaponDebug('left');
-  const backRightDebug = useBackWeaponDebug('right');
+  // Synchronize quickbar with equipment whenever equipment changes
+  useEffect(() => {
+    const equippedItems = getAllEquipped();
+    syncSlots(equippedItems);
+    console.log('[PlayerCharacter] Synced quickbar with equipment', equippedItems.size, 'items');
+  }, [equippedItemsVersion, getAllEquipped, syncSlots]);
+  const layerSystemRef = useRef<AnimationLayerSystem | null>(null);
+  const aimOffsetLayerRef = useRef<AimOffset | null>(null);
+  const previousWieldedSlotRef = useRef<ReturnType<typeof getWieldedSlot>>(null);
 
   // Create layers - memoized so they don't recreate on every render
   const layers = useMemo(() => {
-    const locomotionLayer = new LocomotionLayer({
+    const locomotionLayer = new Locomotion({
       enableSprint: true,
       enable8Way: false,  // Base locomotion doesn't use 8-way
     });
 
-    const tpsLayer = new TPSLayer({
+    const tpsLayer = new TPS_Rifle({
       enableCrouch: true,
       enable8Way: true,  // TPS layer uses 8-way strafe
     });
 
     // Create aim offset layer (for vertical aiming)
-    const aimOffsetLayer = new AimOffsetLayer({
+    const aimOffsetLayer = new AimOffset({
       maxPhiDelta: Math.PI / 3,      // 60° max camera movement
       maxSpineRotation: 0.8,          // 45° max spine rotation
     });
@@ -170,10 +173,6 @@ export function PlayerCharacter({
         velocity={velocity}
         onLayerSystemReady={handleLayerSystemReady}
       />
-
-      {/* Equipment Debuggers - Corrections enabled by default. Uncheck "Enable Correction" in Leva to disable */}
-      <EquipmentDebugger debugConfig={backLeftDebug} />
-      <EquipmentDebugger debugConfig={backRightDebug} />
     </>
   );
 }

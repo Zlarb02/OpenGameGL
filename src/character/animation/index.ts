@@ -12,6 +12,6 @@ export { AnimationLayerSystem } from './AnimationLayerSystem';
 export { AnimationBlender } from './AnimationBlender';
 
 // Layers
-export { LocomotionLayer } from './layers/LocomotionLayer';
-export { TPSLayer } from './layers/TPSLayer';
-export { AimOffsetLayer } from './layers/AimOffsetLayer';
+export { Locomotion } from './layers/Locomotion';
+export { TPS_Rifle } from './layers/TPS_Rifle';
+export { AimOffset } from './layers/AimOffset';

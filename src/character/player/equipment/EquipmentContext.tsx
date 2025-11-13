@@ -4,7 +4,7 @@
  */
 
 import React, { createContext, useContext, useRef, useCallback, useState, useEffect } from 'react';
-import { Group } from 'three';
+import { Group, Object3D } from 'three';
 import { Equipment, EquipmentSlotType } from './types/EquipmentTypes';
 import { EquipmentManager } from './systems/EquipmentManager';
 import { AttachmentSystem } from './systems/AttachmentSystem';
@@ -12,13 +12,17 @@ import { EquipmentRenderer } from './systems/EquipmentRenderer';
 
 interface EquipmentContextValue {
   manager: EquipmentManager | null;
+  attachmentSystem: AttachmentSystem | null;
   equip: (equipment: Equipment, slot: EquipmentSlotType) => Promise<boolean>;
   unequip: (slot: EquipmentSlotType) => Promise<Equipment | null>;
+  unequipAndReturnModel: (slot: EquipmentSlotType) => Promise<{ equipment: Equipment; model: Object3D } | null>;
   getEquipped: (slot: EquipmentSlotType) => Equipment | null;
+  getAllEquipped: () => Map<EquipmentSlotType, Equipment>; // NEW: Get all equipped items
   isSlotOccupied: (slot: EquipmentSlotType) => boolean;
   canEquip: (equipment: Equipment, slot?: EquipmentSlotType) => boolean;
   getFirstAvailableBackSlot: () => EquipmentSlotType | null;
   getFirstAvailableThighSlot: () => EquipmentSlotType | null;
+  getFirstAvailableSlot: (equipment: Equipment) => EquipmentSlotType | null; // Generic version
   initializeSkeleton: (skeleton: Group) => void;
   updateTransform: (slot: EquipmentSlotType, position: [number, number, number], rotation: [number, number, number], scale: number) => boolean;
   equippedItemsVersion: number; // For triggering re-renders
@@ -29,6 +33,9 @@ interface EquipmentContextValue {
   getWieldedSlot: () => EquipmentSlotType | null;
   getWieldedEquipment: () => Equipment | null;
   isWielded: (slot: EquipmentSlotType) => boolean;
+
+  // Debug methods
+  refreshTransforms: () => void;
 }
 
 const EquipmentContext = createContext<EquipmentContextValue | null>(null);
@@ -97,10 +104,24 @@ export function EquipmentProvider({ children }: { children: React.ReactNode }) {
     return result;
   }, []);
 
+  const unequipAndReturnModel = useCallback(async (slot: EquipmentSlotType) => {
+    if (!managerRef.current) return null;
+    const result = await managerRef.current.unequipAndReturnModel(slot);
+    if (result) {
+      setEquippedItemsVersion(v => v + 1); // Trigger re-render
+    }
+    return result;
+  }, []);
+
   const getEquipped = useCallback((slot: EquipmentSlotType) => {
     if (!managerRef.current) return null;
     return managerRef.current.getEquipped(slot);
   }, [equippedItemsVersion]); // Depend on version for updates
+
+  const getAllEquipped = useCallback(() => {
+    if (!managerRef.current) return new Map<EquipmentSlotType, Equipment>();
+    return managerRef.current.getAllEquipped();
+  }, [equippedItemsVersion]);
 
   const isSlotOccupied = useCallback((slot: EquipmentSlotType) => {
     if (!managerRef.current) return false;
@@ -120,6 +141,11 @@ export function EquipmentProvider({ children }: { children: React.ReactNode }) {
   const getFirstAvailableThighSlot = useCallback(() => {
     if (!managerRef.current) return null;
     return managerRef.current.getFirstAvailableThighSlot();
+  }, [equippedItemsVersion]); // Depend on version for updates
+
+  const getFirstAvailableSlot = useCallback((equipment: Equipment) => {
+    if (!managerRef.current) return null;
+    return managerRef.current.getFirstAvailableSlot(equipment);
   }, [equippedItemsVersion]); // Depend on version for updates
 
   const updateTransform = useCallback((
@@ -166,17 +192,27 @@ export function EquipmentProvider({ children }: { children: React.ReactNode }) {
     return managerRef.current.isWielded(slot);
   }, [equippedItemsVersion]);
 
+  // Debug method: refresh all transforms from overrides
+  const refreshTransforms = useCallback(() => {
+    if (!managerRef.current) return;
+    managerRef.current.refreshTransforms();
+  }, []);
+
   return (
     <EquipmentContext.Provider
       value={{
         manager: managerRef.current,
+        attachmentSystem: attachmentSystemRef.current,
         equip,
         unequip,
+        unequipAndReturnModel,
         getEquipped,
+        getAllEquipped,
         isSlotOccupied,
         canEquip,
         getFirstAvailableBackSlot,
         getFirstAvailableThighSlot,
+        getFirstAvailableSlot,
         initializeSkeleton,
         updateTransform,
         equippedItemsVersion,
@@ -185,6 +221,7 @@ export function EquipmentProvider({ children }: { children: React.ReactNode }) {
         getWieldedSlot,
         getWieldedEquipment,
         isWielded,
+        refreshTransforms,
       }}
     >
       {children}

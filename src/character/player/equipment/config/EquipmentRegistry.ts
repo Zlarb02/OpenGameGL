@@ -10,6 +10,7 @@ import {
   AttachmentBehavior,
   WeaponType,
   ConsumableType,
+  ToolType,
   EquipmentCategory,
 } from '../types/EquipmentTypes';
 
@@ -27,11 +28,12 @@ export class EquipmentRegistry {
   static initialize() {
     if (this.initialized) return;
 
-    // Back weapon slots (max 2 rifles) - Calibrated values
+    // Back weapon slots - Accept ANY back weapon on either side (rifles, swords, shields)
     this.registerSlot({
       slotType: EquipmentSlotType.BACK_LEFT,
+      displayName: 'DOS 1',
       category: EquipmentCategory.WEAPON,
-      allowedTypes: [WeaponType.RIFLE],
+      allowedTypes: [WeaponType.RIFLE, WeaponType.SWORD, WeaponType.SHIELD],
       quickbarCompatible: true,
       quickbarSlot: 1,
       attachmentConfig: {
@@ -49,8 +51,9 @@ export class EquipmentRegistry {
 
     this.registerSlot({
       slotType: EquipmentSlotType.BACK_RIGHT,
+      displayName: 'DOS 2',
       category: EquipmentCategory.WEAPON,
-      allowedTypes: [WeaponType.RIFLE],
+      allowedTypes: [WeaponType.RIFLE, WeaponType.SWORD, WeaponType.SHIELD],
       quickbarCompatible: true,
       quickbarSlot: 2,
       attachmentConfig: {
@@ -69,6 +72,7 @@ export class EquipmentRegistry {
     // Thigh weapon slots (pistols, knives)
     this.registerSlot({
       slotType: EquipmentSlotType.THIGH_RIGHT,
+      displayName: 'HOLSTER',
       category: EquipmentCategory.WEAPON,
       allowedTypes: [WeaponType.PISTOL, WeaponType.KNIFE],
       quickbarCompatible: true,
@@ -87,6 +91,7 @@ export class EquipmentRegistry {
 
     this.registerSlot({
       slotType: EquipmentSlotType.THIGH_LEFT,
+      displayName: 'FOURREAU',
       category: EquipmentCategory.WEAPON,
       allowedTypes: [WeaponType.PISTOL, WeaponType.KNIFE],
       quickbarCompatible: true,
@@ -106,8 +111,9 @@ export class EquipmentRegistry {
     // Hand slots (for active weapons - NOT in quickbar, controlled by wielding)
     this.registerSlot({
       slotType: EquipmentSlotType.HAND_PRIMARY,
+      displayName: 'MAIN DROITE',
       category: EquipmentCategory.WEAPON,
-      allowedTypes: [WeaponType.RIFLE, WeaponType.PISTOL, WeaponType.KNIFE],
+      allowedTypes: [WeaponType.RIFLE, WeaponType.PISTOL, WeaponType.KNIFE, WeaponType.SWORD],
       quickbarCompatible: false, // Hand slots are not in quickbar
       attachmentConfig: {
         behavior: AttachmentBehavior.BONE_ATTACH,
@@ -124,8 +130,9 @@ export class EquipmentRegistry {
 
     this.registerSlot({
       slotType: EquipmentSlotType.HAND_SECONDARY,
+      displayName: 'MAIN GAUCHE',
       category: EquipmentCategory.WEAPON,
-      allowedTypes: [WeaponType.PISTOL, WeaponType.KNIFE],
+      allowedTypes: [WeaponType.PISTOL, WeaponType.KNIFE, WeaponType.SHIELD],
       quickbarCompatible: false, // Hand slots are not in quickbar
       attachmentConfig: {
         behavior: AttachmentBehavior.BONE_ATTACH,
@@ -140,37 +147,115 @@ export class EquipmentRegistry {
       animationSet: 'pistol',
     });
 
-    // Belt slots (throwables, consumables)
-    for (let i = 1; i <= 4; i++) {
-      this.registerSlot({
-        slotType: `belt_slot_${i}` as EquipmentSlotType,
-        category: EquipmentCategory.CONSUMABLE,
-        allowedTypes: [
-          WeaponType.GRENADE,
-          WeaponType.MOLOTOV,
-          ConsumableType.MEDICAL,
-          ConsumableType.BANDAGE,
-          ConsumableType.FOOD,
-          ConsumableType.POTION,
-        ],
-        quickbarCompatible: true,
-        quickbarSlot: 4 + i,
-        attachmentConfig: {
-          behavior: AttachmentBehavior.BONE_PARENT,
-          boneName: 'mixamorigspine',
-          boneSearchPatterns: ['spine', 'spine_01'],
-          position: [-0.2 + (i * 0.1), -0.1, 0.15],
-          rotation: [0, 0, 0],
-          scale: 0.5,
-          hideWhenStowed: false,
-        },
-        requiresSpecificAnimation: false,
-      });
-    }
+    // Belt/Utility slots (tools, throwables, consumables)
+    // Slot 5: LAMPE (flashlight, lantern)
+    this.registerSlot({
+      slotType: EquipmentSlotType.BELT_SLOT_1,
+      displayName: 'LAMPE',
+      category: EquipmentCategory.TOOL,
+      allowedTypes: [
+        ToolType.FLASHLIGHT,
+        ToolType.LANTERN,
+      ],
+      quickbarCompatible: true,
+      quickbarSlot: 5,
+      attachmentConfig: {
+        behavior: AttachmentBehavior.BONE_PARENT,
+        boneName: 'mixamorigspine',
+        boneSearchPatterns: ['spine', 'spine_01'],
+        position: [-0.1, -0.1, 0.15],
+        rotation: [0, 0, 0],
+        scale: 0.5,
+        hideWhenStowed: false,
+      },
+      requiresSpecificAnimation: false,
+    });
+
+    // Slot 6: POCHE 1 (throwables, consumables)
+    this.registerSlot({
+      slotType: EquipmentSlotType.BELT_SLOT_2,
+      displayName: 'POCHE 1',
+      category: EquipmentCategory.CONSUMABLE,
+      allowedTypes: [
+        WeaponType.GRENADE,
+        WeaponType.MOLOTOV,
+        ConsumableType.MEDICAL,
+        ConsumableType.BANDAGE,
+        ConsumableType.FOOD,
+        ConsumableType.POTION,
+      ],
+      quickbarCompatible: true,
+      quickbarSlot: 6,
+      attachmentConfig: {
+        behavior: AttachmentBehavior.BONE_PARENT,
+        boneName: 'mixamorigspine',
+        boneSearchPatterns: ['spine', 'spine_01'],
+        position: [0.0, -0.1, 0.15],
+        rotation: [0, 0, 0],
+        scale: 0.5,
+        hideWhenStowed: false,
+      },
+      requiresSpecificAnimation: false,
+    });
+
+    // Slot 7: POCHE 2 (throwables, consumables)
+    this.registerSlot({
+      slotType: EquipmentSlotType.BELT_SLOT_3,
+      displayName: 'POCHE 2',
+      category: EquipmentCategory.CONSUMABLE,
+      allowedTypes: [
+        WeaponType.GRENADE,
+        WeaponType.MOLOTOV,
+        ConsumableType.MEDICAL,
+        ConsumableType.BANDAGE,
+        ConsumableType.FOOD,
+        ConsumableType.POTION,
+      ],
+      quickbarCompatible: true,
+      quickbarSlot: 7,
+      attachmentConfig: {
+        behavior: AttachmentBehavior.BONE_PARENT,
+        boneName: 'mixamorigspine',
+        boneSearchPatterns: ['spine', 'spine_01'],
+        position: [0.1, -0.1, 0.15],
+        rotation: [0, 0, 0],
+        scale: 0.5,
+        hideWhenStowed: false,
+      },
+      requiresSpecificAnimation: false,
+    });
+
+    // Slot 8: POCHE 3 (throwables, consumables)
+    this.registerSlot({
+      slotType: EquipmentSlotType.BELT_SLOT_4,
+      displayName: 'POCHE 3',
+      category: EquipmentCategory.CONSUMABLE,
+      allowedTypes: [
+        WeaponType.GRENADE,
+        WeaponType.MOLOTOV,
+        ConsumableType.MEDICAL,
+        ConsumableType.BANDAGE,
+        ConsumableType.FOOD,
+        ConsumableType.POTION,
+      ],
+      quickbarCompatible: true,
+      quickbarSlot: 8,
+      attachmentConfig: {
+        behavior: AttachmentBehavior.BONE_PARENT,
+        boneName: 'mixamorigspine',
+        boneSearchPatterns: ['spine', 'spine_01'],
+        position: [0.2, -0.1, 0.15],
+        rotation: [0, 0, 0],
+        scale: 0.5,
+        hideWhenStowed: false,
+      },
+      requiresSpecificAnimation: false,
+    });
 
     // Inventory only slot (quest items, misc)
     this.registerSlot({
       slotType: EquipmentSlotType.INVENTORY_ONLY,
+      displayName: 'INVENTAIRE',
       category: EquipmentCategory.MISCELLANEOUS,
       allowedTypes: [], // Accepts anything
       quickbarCompatible: false,

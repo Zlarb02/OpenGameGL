@@ -26,6 +26,8 @@ import { useWeaponState } from './character/player/tps/weapons/useWeaponState';
 import { useCharacterSelector } from './character/hooks/useCharacterSelector';
 import { useAimDebug } from './character/player/tps/shooting/useAimDebug';
 import { useRifleDebug } from './character/player/tps/weapons/useRifleDebug';
+import { useSwordTransformDebug } from './character/player/equipment/debug/useSwordTransformDebug';
+import { useShieldTransformDebug } from './character/player/equipment/debug/useShieldTransformDebug';
 import { useInputControls } from './ui/leva/useInputControls';
 import { useInputRebind } from './ui/leva/useInputRebind';
 import { useLevaConfigManager } from './ui/leva/useLevaConfigManager';
@@ -40,6 +42,8 @@ import { Crosshair } from './ui/hud/crosshair';
 import { HitMarkerProvider, HitMarkerOverlay } from './ui/hud/hitmarker';
 import { InputProvider } from './core/input';
 import { RiflePickup } from './character/player/tps/weapons/RiflePickup';
+import { SwordPickup } from './character/player/tps/weapons/SwordPickup';
+import { ShieldPickup } from './character/player/tps/weapons/ShieldPickup';
 import { InteractIcon3D } from './character/player/interactions/InteractIcon3D';
 import { useObjectSelection } from './character/player/tps/combat/useObjectSelection';
 import { InventoryProvider, useInventory } from './character/player/inventory/InventoryContext';
@@ -47,16 +51,24 @@ import { Inventory } from './ui/inventory/Inventory';
 import { useInventoryControls } from './character/player/inventory/useInventoryControls';
 import { EquipmentProvider } from './character/player/equipment/EquipmentContext';
 import { useQuickSlotControls } from './character/player/equipment/useQuickSlotControls';
+import { useReloadStowControls } from './character/player/equipment/useReloadStowControls';
 import { Quickbar } from './ui/quickbar/Quickbar';
-import { EquipmentDebugger } from './character/player/equipment/EquipmentDebugger';
 import './character/player/equipment/config/items/weapons'; // Auto-register weapons
 import { LoadingScreen } from './ui/loading/LoadingScreen';
+import { DragDropProvider } from './ui/shared/DragDropContext';
+import { QuickbarProvider } from './ui/quickbar/QuickbarContext';
+import { WorldItemManagerProvider } from './character/player/inventory/WorldItemManager';
+import { WorldItems } from './character/player/inventory/WorldItems';
+import { DropZone } from './ui/shared/DropZone';
+import { DragDropManager } from './ui/shared/DragDropManager';
 import { useAssetPreloader } from './core/loading/useAssetPreloader';
 import { CharacterReadyProvider, useCharacterReady } from './character/components/CharacterReadyContext';
+import { CharacterTransformProvider } from './character/components/CharacterTransformContext';
 import { HealthTestScene } from './examples/HealthTestScene';
 import { PerformanceStats, PerformanceStatsCollector } from './ui/debug/PerformanceStats';
 import { ImpactParticles } from './character/player/tps/shooting/ImpactParticles';
 import { ShootingDebugVisualizer } from './character/player/tps/shooting/ShootingDebugVisualizer';
+import { EquipmentTransformSync } from './character/player/equipment/debug/EquipmentTransformSync';
 
 const characterRef = { current: null };
 
@@ -100,16 +112,25 @@ function AppContent() {
   // État pour les rifles ramassés
   const [pickedUpRifles, setPickedUpRifles] = React.useState<Set<number>>(new Set());
 
+  // État pour les swords ramassées
+  const [pickedUpSwords, setPickedUpSwords] = React.useState<Set<number>>(new Set());
+
+  // État pour les shields ramassés
+  const [pickedUpShields, setPickedUpShields] = React.useState<Set<number>>(new Set());
+
   // L'ordre d'appel détermine l'ordre dans Leva
   // ─── 🎮 Contrôles ───
   useInputControls(); // Options d'input en premier
   useInputRebind(); // Système de rebind complet
   useInventoryControls(); // Gestion de l'inventaire avec la touche I
   useQuickSlotControls(); // Gestion des quick slots (1-8)
+  useReloadStowControls(); // Gestion de la touche R (reload/stow/drop)
 
   // ─── 🔧 Debug ───
   useAimDebug(); // Debug (utilisé dans AnimatedModelRifle)
   useRifleDebug(); // Debug position/rotation du rifle
+  useSwordTransformDebug(); // Debug position/rotation sword (back slots)
+  useShieldTransformDebug(); // Debug position/rotation shield (back slots)
 
   // ─── 🎯 Character & Gameplay ───
   const weaponState = useWeaponState();
@@ -133,18 +154,25 @@ function AppContent() {
     };
   };
 
-  // Positions des rifles (disposition en grille)
+  const handleSwordPickup = (index: number) => {
+    return () => {
+      setPickedUpSwords(prev => new Set([...prev, index]));
+      console.log(`Sword ${index} ramassée !`);
+    };
+  };
+
+  const handleShieldPickup = (index: number) => {
+    return () => {
+      setPickedUpShields(prev => new Set([...prev, index]));
+      console.log(`Shield ${index} ramassé !`);
+    };
+  };
+
+  // Positions des rifles (3 rifles exactement)
   const riflePositions: [number, number, number][] = [
     [5, 1, 0],
     [5, 1, 5],
     [5, 1, -5],
-    [-5, 1, 0],
-    [-5, 1, 5],
-    [-5, 1, -5],
-    [0, 1, 8],
-    [0, 1, -8],
-    [8, 1, 0],
-    [-8, 1, 0],
   ];
 
   // Combined loading state: wait for both asset preload AND character initialization
@@ -177,12 +205,13 @@ function AppContent() {
       {/* Only show game UI when fully ready */}
       {isFullyReady && (
         <>
+          <DragDropManager />
           <PerformanceStats />
           <Crosshair />
           <HitMarkerOverlay />
           <Inventory />
           <Quickbar />
-          <EquipmentDebugger />
+          <DropZone />
           <Bolt className="fixed top-4 right-4 w-6 h-6 text-white opacity-50" />
         </>
       )}
@@ -262,12 +291,56 @@ function AppContent() {
                 />
               )
             ))}
+
+            {/* Spawn swords for testing (3 swords) */}
+            {!pickedUpSwords.has(0) && (
+              <SwordPickup
+                position={[3, 1, 3]}
+                onPickup={handleSwordPickup(0)}
+              />
+            )}
+            {!pickedUpSwords.has(1) && (
+              <SwordPickup
+                position={[-3, 1, 3]}
+                onPickup={handleSwordPickup(1)}
+              />
+            )}
+            {!pickedUpSwords.has(2) && (
+              <SwordPickup
+                position={[0, 1, 3]}
+                onPickup={handleSwordPickup(2)}
+              />
+            )}
+
+            {/* Spawn shields for testing (3 shields) */}
+            {!pickedUpShields.has(0) && (
+              <ShieldPickup
+                position={[3, 1, -3]}
+                onPickup={handleShieldPickup(0)}
+              />
+            )}
+            {!pickedUpShields.has(1) && (
+              <ShieldPickup
+                position={[-3, 1, -3]}
+                onPickup={handleShieldPickup(1)}
+              />
+            )}
+            {!pickedUpShields.has(2) && (
+              <ShieldPickup
+                position={[0, 1, -3]}
+                onPickup={handleShieldPickup(2)}
+              />
+            )}
+
+            {/* Dropped items in world */}
+            <WorldItems />
           </Physics>
           <FollowCamera target={characterRef} />
           <HitDetectionManager />
           <ObjectSelectionManager characterRef={characterRef} />
           <InteractIcon3D />
           <PerformanceStatsCollector />
+          <EquipmentTransformSync />
           <EffectComposer>
             <DynamicDepthOfField
               enabled={postProcessing.depthOfFieldEnabled}
@@ -324,11 +397,19 @@ function App() {
         <HitMarkerProvider>
           <InventoryProvider>
             <EquipmentProvider>
-              <CharacterReadyProvider>
-                <div className="w-full h-screen">
-                  <AppContent />
-                </div>
-              </CharacterReadyProvider>
+              <CharacterTransformProvider>
+                <WorldItemManagerProvider>
+                  <DragDropProvider>
+                    <QuickbarProvider>
+                      <CharacterReadyProvider>
+                        <div className="w-full h-screen">
+                          <AppContent />
+                        </div>
+                      </CharacterReadyProvider>
+                    </QuickbarProvider>
+                  </DragDropProvider>
+                </WorldItemManagerProvider>
+              </CharacterTransformProvider>
             </EquipmentProvider>
           </InventoryProvider>
         </HitMarkerProvider>

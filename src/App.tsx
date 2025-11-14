@@ -17,6 +17,7 @@ import { BlendFunction } from 'postprocessing';
 import { CharacterController } from './character/components/CharacterController';
 import { Ground } from './environment/components/Ground';
 import { Balls } from './environment/components/Balls';
+import { BurgerPizzeria } from './environment/components/BurgerPizzeria';
 import { FollowCamera } from './core/camera/FollowCamera';
 import { useCharacterControls } from './character/hooks/useCharacterControls';
 import { useCameraControls } from './core/camera/useCameraControls';
@@ -270,6 +271,7 @@ function AppContent() {
           >
             <CharacterController ref={characterRef} />
             <Ground />
+            <BurgerPizzeria />
             <Balls />
 
             {/* Health System Test Scene */}

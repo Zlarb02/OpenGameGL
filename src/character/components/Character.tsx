@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Group, AnimationMixer, Bone } from 'three';
+import { Group, AnimationMixer, Bone, MeshBasicMaterial } from 'three';
 import { FBXLoader, GLTFLoader } from 'three-stdlib';
 import { useFrame } from '@react-three/fiber';
 import { AnimationLayerSystem } from '../animation/AnimationLayerSystem';
@@ -117,11 +117,33 @@ export function Character({
         // Apply scale (hardcoded like in old system)
         loadedModel.scale.setScalar(0.01);
 
-        // Setup shadows
+        // Setup shadows and fix materials
         loadedModel.traverse((child: any) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+
+            // Replace with basic material for flat texture look (no lighting)
+            if (child.material) {
+              const oldMaterial = child.material;
+
+              // Create new basic material that doesn't react to light
+              const basicMaterial = new MeshBasicMaterial({
+                map: oldMaterial.map,
+                color: oldMaterial.color || 0xffffff,
+                side: 2, // DoubleSide
+                transparent: false,
+                alphaTest: 0,
+              });
+
+              // Replace the material
+              child.material = basicMaterial;
+
+              // Dispose old material to free memory
+              if (oldMaterial.dispose) {
+                oldMaterial.dispose();
+              }
+            }
           }
         });
 

@@ -4,21 +4,13 @@ import { createSectionControls } from '../../utils/levaSectionManager';
 // Tous les modèles utiliseront automatiquement les animations du pack X Bot
 export const AVAILABLE_MODELS = {
   'X Bot': '/models/characters/xbot/X Bot.fbx',
-  'Default': '/models/characters/character.glb',
-  'SWAT + Rifle': '/models/swat-rifle.fbx',
-  'Vanguard': '/models/vanguard.fbx',
-  'The Boss': '/models/the-boss.fbx',
-  'Ch11': '/models/ch11.fbx',
-  'Eve': '/models/eve.fbx',
-  'Ch44': '/models/ch44.fbx',
-  'Paladin': '/models/paladin.fbx',
-  'Kaya': '/models/kaya.fbx',
+  'Security Guard': '/models/characters/security_guard.fbx',
 } as const;
 
 export function useCharacterSelector() {
   const controls = useControls('🎯 Character', {
     character: {
-      value: 'X Bot',
+      value: 'Security Guard',
       options: Object.keys(AVAILABLE_MODELS),
       label: '🎮 Model'
     },

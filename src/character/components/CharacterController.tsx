@@ -65,7 +65,7 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
     const translation = rigidBody.current.translation();
     const rayLength = 1.5; // Increased length for better detection
     const rayDir = { x: 0, y: -1, z: 0 };
-    
+
     // Cast rays from multiple points around the character
     const rayOffsets = [
       { x: 0, z: 0 },      // Center
@@ -74,20 +74,20 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
       { x: 0, z: 0.3 },    // Front
       { x: 0, z: -0.3 },   // Back
     ];
-    
+
     let isGrounded = false;
     let closestHit = null;
-    
+
     for (const offset of rayOffsets) {
       const ray = new rapier.Ray(
-        { 
-          x: translation.x + offset.x, 
-          y: translation.y, 
-          z: translation.z + offset.z 
+        {
+          x: translation.x + offset.x,
+          y: translation.y,
+          z: translation.z + offset.z
         },
         rayDir
       );
-      
+
       const hit = world.castRay(
         ray,
         rayLength,
@@ -97,7 +97,7 @@ export const CharacterController = React.forwardRef<unknown>((_, ref) => {
         undefined,
         rigidBody.current
       );
-      
+
       if (hit && (!closestHit || hit.timeOfImpact < closestHit.timeOfImpact)) {
         closestHit = hit;
         isGrounded = true;
